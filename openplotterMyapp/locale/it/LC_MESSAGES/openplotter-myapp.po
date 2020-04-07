@@ -1,0 +1,109 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: openplotter\n"
+"POT-Creation-Date: 2020-03-05 12:40+0100\n"
+"PO-Revision-Date: 2020-03-10 20:14+0100\n"
+"Last-Translator: \n"
+"Language-Team: Italian\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"X-Poedit-Basepath: ../../..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Crowdin-Project: openplotter\n"
+"X-Crowdin-Language: it\n"
+"X-Crowdin-File: openplotter-myapp.po\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: myappPostInstall.py:46
+msgid "Adding app to OpenPlotter..."
+msgstr "Aggiungendo le app a OpenPlotter..."
+
+#: myappPostInstall.py:54 myappPostInstall.py:67 myappPostInstall.py:77
+#: myappPreUninstall.py:38 myappPreUninstall.py:48
+msgid "DONE"
+msgstr "FATTO"
+
+#: myappPostInstall.py:55 myappPostInstall.py:68 myappPostInstall.py:78
+#: myappPreUninstall.py:39 myappPreUninstall.py:49
+msgid "FAILED: "
+msgstr "FALLITO: "
+
+#: myappPostInstall.py:57
+msgid "Checking sources..."
+msgstr "Controllo codici sorgente..."
+
+#: myappPostInstall.py:74
+msgid "Setting version..."
+msgstr "Impostazione versione..."
+
+#: myappPreUninstall.py:29
+msgid "Removing app from OpenPlotter..."
+msgstr "Rimozione app da OpenPlotter..."
+
+#: myappPreUninstall.py:45
+msgid "Removing version..."
+msgstr "Rimozione versione..."
+
+#: openplotterMyapp.py:33 openplotterMyapp.py:55
+msgid "My App"
+msgstr "La mia App"
+
+#: openplotterMyapp.py:43
+msgid "Help"
+msgstr "Aiuto"
+
+#: openplotterMyapp.py:46
+msgid "Settings"
+msgstr "Impostazioni"
+
+#: openplotterMyapp.py:73
+msgid "Click on \"Help\" to learn how to get started"
+msgstr "Clicca su \"Aiuto\" per imparare come iniziare"
+
+#: openplotterMyapp.py:110
+msgid "This app does nothing."
+msgstr "Questa app non fa niente."
+
+#: openplotterMyapp.py:111
+msgid "This is a template to start writing your own openplotter app."
+msgstr "Questo è un modello per iniziare a scrivere la tua app openplotter."
+
+#: startup.py:27
+msgid "Opening \"My app\"..."
+msgstr "Apertura \"La mia app\"..."
+
+#: startup.py:35
+msgid "This message should be green"
+msgstr "Questo messaggio dovrebbe essere verde"
+
+#: startup.py:36
+msgid "This message should be black"
+msgstr "Questo messaggio dovrebbe essere nero"
+
+#: startup.py:37
+msgid "\"My app\" should open. Uninstall \"My app\" to remove this."
+msgstr "\"La mia app\" dovrebbe aprirsi. Disinstalla \"La mia app\" per rimuovere questo messaggio."
+
+#: startup.py:49
+msgid "Checking \"My app\"..."
+msgstr "Controllo \"La mia app\"..."
+
+#: startup.py:57
+msgid "\"My app\" is installed"
+msgstr "\"La mia app\" è installata"
+
+#: startup.py:59
+msgid "\"My app\" is running"
+msgstr "\"La mia app\" è in esecuzione"
+
+#: startup.py:60
+msgid "\"My app\" is not running"
+msgstr "\"La mia app\" non è in esecuzione"
+
+#: startup.py:61
+msgid "Warning example. Uninstall \"My app\" to remove this."
+msgstr "Esempio di avviso. Disinstalla \"La mia app\" per rimuovere questo avviso."

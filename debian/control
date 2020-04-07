@@ -1,0 +1,15 @@
+Source: openplotter-myapp
+Section: misc
+Priority: optional
+Maintainer: Sailoog <info@sailoog.com>
+Build-Depends: debhelper (>=9),dh-python,python3-all,python3-setuptools
+Standards-Version: 3.9.6
+Homepage: https://github.com/openplotter/openplotter-myapp
+X-Python3-Version: >= 3.2
+
+Package: openplotter-myapp
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${python3:Depends}, openplotter-settings
+Description: This is a template to help create apps for OpenPlotter
+ This is a template to help create apps for OpenPlotter

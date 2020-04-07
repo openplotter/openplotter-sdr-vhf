@@ -1,0 +1,109 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: openplotter\n"
+"POT-Creation-Date: 2020-03-05 12:40+0100\n"
+"PO-Revision-Date: 2020-03-10 20:14+0100\n"
+"Last-Translator: \n"
+"Language-Team: Finnish\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"X-Poedit-Basepath: ../../..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-SourceCharset: UTF-8\n"
+"X-Crowdin-Project: openplotter\n"
+"X-Crowdin-Language: fi\n"
+"X-Crowdin-File: openplotter-myapp.po\n"
+"X-Poedit-SearchPath-0: .\n"
+
+#: myappPostInstall.py:46
+msgid "Adding app to OpenPlotter..."
+msgstr "Apin lisäys OpenPlotteriin..."
+
+#: myappPostInstall.py:54 myappPostInstall.py:67 myappPostInstall.py:77
+#: myappPreUninstall.py:38 myappPreUninstall.py:48
+msgid "DONE"
+msgstr "VALMIS"
+
+#: myappPostInstall.py:55 myappPostInstall.py:68 myappPostInstall.py:78
+#: myappPreUninstall.py:39 myappPreUninstall.py:49
+msgid "FAILED: "
+msgstr "EPÄONNISTUI: "
+
+#: myappPostInstall.py:57
+msgid "Checking sources..."
+msgstr "Tarkistetaan lähteitä..."
+
+#: myappPostInstall.py:74
+msgid "Setting version..."
+msgstr "Asetetaan versio..."
+
+#: myappPreUninstall.py:29
+msgid "Removing app from OpenPlotter..."
+msgstr "Apin poisto OpenPlotterista..."
+
+#: myappPreUninstall.py:45
+msgid "Removing version..."
+msgstr "Poistetaan versio..."
+
+#: openplotterMyapp.py:33 openplotterMyapp.py:55
+msgid "My App"
+msgstr "Minun app"
+
+#: openplotterMyapp.py:43
+msgid "Help"
+msgstr "Ohje"
+
+#: openplotterMyapp.py:46
+msgid "Settings"
+msgstr "Asetukset"
+
+#: openplotterMyapp.py:73
+msgid "Click on \"Help\" to learn how to get started"
+msgstr "Klikkaa \"Ohje\" ja opit alkuun pääsyn"
+
+#: openplotterMyapp.py:110
+msgid "This app does nothing."
+msgstr "Tämä app ei tee mitään."
+
+#: openplotterMyapp.py:111
+msgid "This is a template to start writing your own openplotter app."
+msgstr "Tämä on pohja, jolla pääset alkuun oman openplotterapin kirjoittamisessa."
+
+#: startup.py:27
+msgid "Opening \"My app\"..."
+msgstr "Avataan \"Minun app\"..."
+
+#: startup.py:35
+msgid "This message should be green"
+msgstr "Tämän viestin tulisi olla vihreä"
+
+#: startup.py:36
+msgid "This message should be black"
+msgstr "Tämän viestin tulisi olla musta"
+
+#: startup.py:37
+msgid "\"My app\" should open. Uninstall \"My app\" to remove this."
+msgstr "\"Minun app\"pitää aueta. Poista \"Minun app\" asennus tämän poistamiseksi."
+
+#: startup.py:49
+msgid "Checking \"My app\"..."
+msgstr "Tarkistetaan \"Minun app\"..."
+
+#: startup.py:57
+msgid "\"My app\" is installed"
+msgstr "\"Minun app\" on asennettu"
+
+#: startup.py:59
+msgid "\"My app\" is running"
+msgstr "\"Minun app\" on käynnissä"
+
+#: startup.py:60
+msgid "\"My app\" is not running"
+msgstr "\"Minun app\" ei ole käynnissä"
+
+#: startup.py:61
+msgid "Warning example. Uninstall \"My app\" to remove this."
+msgstr "Varoitus esimerkki. Poista \"Minun app\" asennus tämän poistamiseksi."

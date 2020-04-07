@@ -1,0 +1,24 @@
+openplotter-myapp (2.0.4-beta) buster; urgency=medium
+
+  * Fix error
+  * Update translations
+
+ -- Sailoog <info@sailoog.com>  Tue, 10 Mar 2020 20:16:53 +0100
+
+openplotter-myapp (2.0.3-beta) buster; urgency=medium
+
+  * Fix error
+
+ -- Sailoog <info@sailoog.com>  Thu, 05 Mar 2020 16:23:24 +0100
+
+openplotter-myapp (2.0.2-beta) buster; urgency=medium
+
+  * Make external apps independent
+
+ -- Sailoog <info@sailoog.com>  Thu, 05 Mar 2020 12:50:12 +0100
+
+openplotter-myapp (2.0.1-beta) buster; urgency=medium
+
+  * Initial release
+
+ -- Sailoog <info@sailoog.com>  Sun, 11 Aug 2019 19:20:18 +0200
