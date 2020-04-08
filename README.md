@@ -1,6 +1,6 @@
-## openplotter-myapp
+## openplotter-sdr-vhf
 
-This is a template to help create apps for OpenPlotter. 
+Suite of applications for SDR reception in VHF range. 
 
 ### Installing
 
@@ -8,20 +8,22 @@ Install [openplotter-settings](https://github.com/openplotter/openplotter-settin
 
 #### For production
 
-Download the latest [openplotter-myapp deb package](https://cloudsmith.io/~openplotter/repos/openplotter-external/packages/) and install it:
-
-`sudo dpkg -i openplotter-myapp_x.x.x-xxx_all.deb` 
+Install SDR VHF from openplotter-settings app.
 
 #### For development
 
+Install openplotter-sdr-vhf dependencies:
+
+`sudo apt install ...`
+
 Clone the repository:
 
-`git clone https://github.com/openplotter/openplotter-myapp`
+`git clone https://github.com/openplotter/openplotter-sdr-vhf`
 
-Create the package:
+Make your changes and create the package:
 
 ```
-cd openplotter-myapp
+cd openplotter-sdr-vhf
 dpkg-buildpackage -b
 ```
 
@@ -29,18 +31,18 @@ Install the package:
 
 ```
 cd ..
-sudo dpkg -i openplotter-myapp_x.x.x-xxx_all.deb
+sudo dpkg -i openplotter-sdr-vhf_x.x.x-xxx_all.deb
 ```
 
-Run post installation script:
+Run post-installation script:
 
-`sudo myappPostInstall`
+`sudo sdrVhfPostInstall`
 
 Run:
 
-`openplotter-myapp`
+`openplotter-sdr-vhf`
 
-Make your changes and repeat packaging and installation steps to test. Pull request your changes to github and we will check and add them to the next version of the [Debian package](https://cloudsmith.io/~openplotter/repos/openplotter-external/packages/).
+Make your changes and repeat package, installation and post-installation steps to test. Pull request your changes to github and we will check and add them to the next version of the [Debian package](https://launchpad.net/~openplotter/+archive/ubuntu/openplotter).
 
 ### Documentation
 

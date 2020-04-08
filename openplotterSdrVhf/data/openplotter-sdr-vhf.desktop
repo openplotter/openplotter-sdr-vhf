@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=SDR VHF
+Exec=openplotter-sdr-vhf
+Icon=openplotter-sdr-vhf
+StartupNotify=true
+Terminal=false
+Type=Application
+Categories=OpenPlotter

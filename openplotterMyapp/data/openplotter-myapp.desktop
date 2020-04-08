@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=My App
-Exec=openplotter-myapp
-Icon=openplotter-myapp
-StartupNotify=true
-Terminal=false
-Type=Application
-Categories=OpenPlotter

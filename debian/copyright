@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
-Upstream-Name: openplotter-myapp
-Source: https://github.com/openplotter/openplotter-myapp
+Upstream-Name: openplotter-sdr-vhf
+Source: https://github.com/openplotter/openplotter-sdr-vhf
 
 Files: *
 Copyright: 2019 Sailoog <info@sailoog.com>
