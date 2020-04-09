@@ -16,11 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
 
-import wx, os, webbrowser, subprocess, time
+import wx, os, sys, webbrowser, subprocess, time
 from openplotterSettings import conf
 from openplotterSettings import language
 from openplotterSettings import platform
+from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin
 from .version import version
+
+class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
+	def __init__(self, parent, height):
+		wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER, size=(650, height))
+		CheckListCtrlMixin.__init__(self)
+		ListCtrlAutoWidthMixin.__init__(self)
 
 class MyFrame(wx.Frame):
 	def __init__(self):
@@ -47,24 +54,39 @@ class MyFrame(wx.Frame):
 		toolSettings = self.toolbar1.AddTool(102, _('Settings'), wx.Bitmap(self.currentdir+"/data/settings.png"))
 		self.Bind(wx.EVT_TOOL, self.OnToolSettings, toolSettings)
 		self.toolbar1.AddSeparator()
+		self.refreshButton = self.toolbar1.AddTool(104, _('Refresh'), wx.Bitmap(self.currentdir+"/data/refresh.png"))
+		self.Bind(wx.EVT_TOOL, self.OnRefreshButton, self.refreshButton)
 
 		self.notebook = wx.Notebook(self)
 		self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChange)
 		self.sdrApps = wx.Panel(self.notebook)
-		self.connections = wx.Panel(self.notebook)
-		self.output = wx.Panel(self.notebook)
+		self.systemd = wx.Panel(self.notebook)
 		self.notebook.AddPage(self.sdrApps, _('SDR apps'))
+		self.notebook.AddPage(self.systemd, _('Processes'))
 		self.il = wx.ImageList(24, 24)
 		img0 = self.il.Add(wx.Bitmap(self.currentdir+"/data/openplotter-24.png", wx.BITMAP_TYPE_PNG))
+		img1 = self.il.Add(wx.Bitmap(self.currentdir+"/data/process.png", wx.BITMAP_TYPE_PNG))
 		self.notebook.AssignImageList(self.il)
 		self.notebook.SetPageImage(0, img0)
+		self.notebook.SetPageImage(1, img1)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(self.toolbar1, 0, wx.EXPAND)
 		vbox.Add(self.notebook, 1, wx.EXPAND)
 		self.SetSizer(vbox)
 
+		self.appsDict = []
+
+		app = {
+		'name': 'AIS',
+		'included': True,
+		'service': 'openplotter-rtl_ais',
+		'edit': True,
+		}
+		self.appsDict.append(app)
+
 		self.pageSdrApps()
+		self.pageSystemd()
 
 		maxi = self.conf.get('GENERAL', 'maximize')
 		if maxi == '1': self.Maximize()
@@ -101,12 +123,173 @@ class MyFrame(wx.Frame):
 		subprocess.call(['pkill', '-f', 'openplotter-settings'])
 		subprocess.Popen('openplotter-settings')
 
+################################################################################
+
 	def pageSdrApps(self):
+		self.listApps = wx.ListCtrl(self.sdrApps, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,200))
+		self.listApps.InsertColumn(0, _('Name'), width=320)
+		self.listApps.InsertColumn(1, 'Status', width=365)
+		self.listApps.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListAppsSelected)
+		self.listApps.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListAppsDeselected)
+		self.listApps.SetTextColour(wx.BLACK)
+
+		self.toolbar2 = wx.ToolBar(self.sdrApps, style=wx.TB_TEXT | wx.TB_VERTICAL)
+		self.editButton = self.toolbar2.AddTool(201, _('Edit'), wx.Bitmap(self.currentdir+"/data/edit.png"))
+		self.Bind(wx.EVT_TOOL, self.OnEditButton, self.editButton)
+		self.toolbar2.AddSeparator()
+		toolInstall= self.toolbar2.AddTool(203, _('Install'), wx.Bitmap(self.currentdir+"/data/install.png"))
+		self.Bind(wx.EVT_TOOL, self.OnToolInstall, toolInstall)
+		toolUninstall= self.toolbar2.AddTool(205, _('Uninstall'), wx.Bitmap(self.currentdir+"/data/uninstall.png"))
+		self.Bind(wx.EVT_TOOL, self.OnToolUninstall, toolUninstall)
+
+		sizer = wx.BoxSizer(wx.HORIZONTAL)
+		sizer.Add(self.listApps, 1, wx.EXPAND, 0)
+		sizer.Add(self.toolbar2, 0)
+		self.sdrApps.SetSizer(sizer)
+
+		self.OnRefreshButton()
+
+	def onListAppsSelected(self, e):
+		i = e.GetIndex()
+		valid = e and i >= 0
+		if not valid: return
+		self.onListAppsDeselected()
+		apps = list(reversed(self.appsDict))
+		if self.listApps.GetItemBackgroundColour(i) != (200,200,200):
+			if not apps[i]['included']:
+				self.toolbar2.EnableTool(203,True)
+				self.toolbar2.EnableTool(205,True)
+			if apps[i]['edit']: self.toolbar2.EnableTool(201,True)
+		else: self.toolbar2.EnableTool(203,True)
+
+	def onListAppsDeselected(self, event=0):
+		self.toolbar2.EnableTool(203,False)
+		self.toolbar2.EnableTool(205,False)
+		self.toolbar2.EnableTool(201,False)
+
+	def OnRefreshButton(self, event=0):
+		self.listApps.DeleteAllItems()
+		for i in self.appsDict:
+			item = self.listApps.InsertItem(0, i['name'])
+			if i['included']: self.listApps.SetItem(item, 1, _('installed'))
+			elif os.path.isfile('/etc/systemd/system/'+i['service']+'.service'):
+				self.listApps.SetItem(item, 1, _('installed'))
+			else:
+				self.listApps.SetItem(item, 1, _('not installed'))
+				self.listApps.SetItemBackgroundColour(item,(200,200,200))
+		self.onListAppsDeselected()
+		try: self.set_listSystemd()
+		except: pass
+
+	def OnToolInstall(self, e):
+		pass
+
+	def OnToolUninstall(self, e):
+		pass
+
+	def OnEditButton(self, e):
+		pass
+
+################################################################################
+
+	def pageSystemd(self):
+		self.started = False
+		self.aStatusList = [_('inactive'),_('active')]
+		self.bStatusList = [_('dead'),_('running')] 
+
+		self.listSystemd = CheckListCtrl(self.systemd, 152)
+		self.listSystemd.InsertColumn(0, _('Autostart'), width=90)
+		self.listSystemd.InsertColumn(1, _('Process'), width=150)
+		self.listSystemd.InsertColumn(2, _('Status'), width=150)
+		self.listSystemd.InsertColumn(3, '  ', width=150)
+		self.listSystemd.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListSystemdSelected)
+		self.listSystemd.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListSystemdDeselected)
+		self.listSystemd.SetTextColour(wx.BLACK)
+
+		self.listSystemd.OnCheckItem = self.OnCheckItem
+
+		self.toolbar3 = wx.ToolBar(self.systemd, style=wx.TB_TEXT | wx.TB_VERTICAL)
+		start = self.toolbar3.AddTool(301, _('Start'), wx.Bitmap(self.currentdir+"/data/start.png"))
+		self.Bind(wx.EVT_TOOL, self.onStart, start)
+		stop = self.toolbar3.AddTool(302, _('Stop'), wx.Bitmap(self.currentdir+"/data/stop.png"))
+		self.Bind(wx.EVT_TOOL, self.onStop, stop)
+		restart = self.toolbar3.AddTool(303, _('Restart'), wx.Bitmap(self.currentdir+"/data/restart.png"))
+		self.Bind(wx.EVT_TOOL, self.onRestart, restart)	
+
+		sizer = wx.BoxSizer(wx.HORIZONTAL)
+		sizer.Add(self.listSystemd, 1, wx.EXPAND, 0)
+		sizer.Add(self.toolbar3, 0)
+
+		self.systemd.SetSizer(sizer)
+
+		self.set_listSystemd()
+		self.started = True
+
+	def onListSystemdSelected(self, e):
+		i = e.GetIndex()
+		valid = e and i >= 0
+		if not valid: return
+		self.toolbar3.EnableTool(301,True)
+		self.toolbar3.EnableTool(302,True)
+		self.toolbar3.EnableTool(303,True)
 
 
-		vbox = wx.BoxSizer(wx.VERTICAL)
+	def onListSystemdDeselected(self, event=0):
+		self.toolbar3.EnableTool(301,False)
+		self.toolbar3.EnableTool(302,False)
+		self.toolbar3.EnableTool(303,False)
 
-		self.sdrApps.SetSizer(vbox)
+
+	def set_listSystemd(self):
+		self.process = []
+		for i in self.appsDict:
+			self.process.append(i['service'])
+		self.listSystemd.DeleteAllItems()
+		index = 1
+		for i in self.process:
+			if i:
+				index = self.listSystemd.InsertItem(sys.maxsize, '')
+				self.statusUpdate(i,index)
+		self.onListSystemdDeselected()
+
+	def statusUpdate(self, process, index): 
+		command = 'systemctl show ' + process + ' --no-page'
+		output = subprocess.check_output(command.split(),universal_newlines=True)
+		if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
+		self.listSystemd.SetItem(index, 1, process)
+		self.listSystemd.SetItem(index, 2, self.aStatusList[('ActiveState=active' in output)*1])
+		self.listSystemd.SetItem(index, 3, self.bStatusList[('SubState=running' in output)*1])
+						
+	def onStart(self,e):
+		index = self.listSystemd.GetFirstSelected()
+		if index == -1: return
+		self.ShowStatusBarYELLOW(_('Starting process...'))
+		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]).split())
+		self.set_listSystemd()
+		self.ShowStatusBarGREEN(_('Done'))
+
+	def onStop(self,e):
+		index = self.listSystemd.GetFirstSelected()
+		if index == -1: return
+		self.ShowStatusBarYELLOW(_('Stopping process...'))
+		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]).split())
+		self.set_listSystemd()
+		self.ShowStatusBarGREEN(_('Done'))
+
+	def onRestart(self,e):
+		index = self.listSystemd.GetFirstSelected()
+		if index == -1: return
+		self.ShowStatusBarYELLOW(_('Restarting process...'))
+		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]).split())
+		self.set_listSystemd()
+		self.ShowStatusBarGREEN(_('Done'))
+		
+	def OnCheckItem(self, index, flag):
+		if not self.started: return
+		if flag:
+			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]).split())
+		else:
+			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]).split())
 
 ################################################################################
 

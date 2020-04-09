@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
 
-import os
+import os, subprocess
 from openplotterSettings import conf
 from openplotterSettings import language
 
@@ -27,7 +27,14 @@ def main():
 	package = 'openplotter-sdr-vhf'
 	language.Language(currentdir, package, currentLanguage)
 
-
+	print(_('Removing rtl_ais service...'))
+	try:
+		subprocess.call((' systemctl stop openplotter-rtl_ais').split())
+		subprocess.call((' systemctl disable openplotter-rtl_ais').split())
+		subprocess.call((' rm -f /etc/systemd/system/openplotter-rtl_ais.service').split())
+		subprocess.call((' systemctl daemon-reload').split())
+		print(_('DONE'))
+	except Exception as e: print(_('FAILED: ')+str(e))
 
 	print(_('Removing version...'))
 	try:

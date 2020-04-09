@@ -14,7 +14,7 @@ Install SDR VHF from openplotter-settings app.
 
 Install openplotter-sdr-vhf dependencies:
 
-`sudo apt install ...`
+`sudo apt install kalibrate-rtl rtl-ais`
 
 Clone the repository:
 
