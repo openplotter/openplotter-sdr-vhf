@@ -27,6 +27,12 @@ def main():
 	package = 'openplotter-sdr-vhf'
 	language.Language(currentdir, package, currentLanguage)
 
+	print(_('Removing python packages...'))
+	try:
+		subprocess.call(['pip3', 'uninstall', '-y', 'pyrtlsdr'])
+		print(_('DONE'))
+	except Exception as e: print(_('FAILED: ')+str(e))
+	
 	print(_('Removing rtl_ais service...'))
 	try:
 		subprocess.call((' systemctl stop openplotter-rtl_ais').split())
@@ -38,7 +44,7 @@ def main():
 
 	print(_('Removing version...'))
 	try:
-		conf2.set('APPS', 'sdr-vhf', '')
+		conf2.set('APPS', 'sdr_vhf', '')
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 

@@ -19,14 +19,33 @@
 import os, subprocess
 from openplotterSettings import conf
 from openplotterSettings import language
+from openplotterSettings import platform
 from .version import version
 
 def main():
 	conf2 = conf.Conf()
+	platform2 = platform.Platform()
 	currentdir = os.path.dirname(os.path.abspath(__file__))
 	currentLanguage = conf2.get('GENERAL', 'lang')
 	package = 'openplotter-sdr-vhf'
 	language.Language(currentdir, package, currentLanguage)
+
+	print(_('Installing python packages...'))
+	try:
+		subprocess.call(['pip3', 'install', 'pyrtlsdr'])
+		print(_('DONE'))
+	except Exception as e: print(_('FAILED: ')+str(e))
+
+	print(_('Checking SDR AIS settings...'))
+	try:
+		sdrAisDeviceIndex = conf2.get('SDR-VHF', 'sdraisdeviceindex')
+		sdrAisPPM = conf2.get('SDR-VHF', 'sdraisppm')
+		sdrAisPort = conf2.get('SDR-VHF', 'sdraisport')
+		if not sdrAisDeviceIndex: conf2.set('SDR-VHF', 'sdraisdeviceindex', '0')
+		if not sdrAisPPM: conf2.set('SDR-VHF', 'sdraisppm', '0')
+		if not sdrAisPort: conf2.set('SDR-VHF', 'sdraisport', '10110')
+		print(_('DONE'))
+	except Exception as e: print(_('FAILED: ')+str(e))
 
 	print(_('Adding rtl_ais service...'))
 	try:
@@ -40,8 +59,8 @@ def main():
 		'[Service]\n'+
 		'Type=simple\n'+
 		'User=root\n'+
-		'EnvironmentFile='+conf2.home+'/.openplotter/rtl_ais.conf\n'+
-		'ExecStart=/usr/bin/rtl_ais -p $PPM -P 10110\n'+
+		'EnvironmentFile='+conf2.home+'/.openplotter/openplotter.conf\n'+
+		'ExecStart=rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'+
 		'Restart=always\n'+
 		'RestartSec=30\n'+
 		'KillMode=process\n\n'+
@@ -49,19 +68,41 @@ def main():
 		'WantedBy=multi-user.target\n'
 		)
 		fo.close()
-		file = conf2.home+'/.openplotter/rtl_ais.conf'
-		if not os.path.isfile(file):
-			fo = open(file, "w")
-			fo.write('PPM=0\n')
-			fo.close()
-			os.chmod(file, 0o0777)
 		subprocess.call((' systemctl daemon-reload').split())
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 	
+	'''
+	if platform2.skDir:
+		print(_('Checking Signal K connection for SDR AIS...'))
+		try:
+			from openplotterSignalkInstaller import editSettings
+			skSettings = editSettings.EditSettings()
+			exists = False
+			if 'pipedProviders' in skSettings.data:
+				for i in skSettings.data['pipedProviders']:
+					try:
+						if i['pipeElements'][0]['options']['type']=='NMEA0183':
+							if i['pipeElements'][0]['options']['subOptions']['type']=='udp':
+								if i['pipeElements'][0]['options']['subOptions']['port']=='10110': exists = True
+					except Exception as e: print(str(e))
+			if not exists:
+				c = 0
+				ID = 'OpenPlotter NMEA 0183 input'
+				while True:
+					if skSettings.connectionIdExists(ID):
+						ID = ID+str(c)
+						c = c + 1
+					else: break
+				if skSettings.setNetworkConnection(ID, 'NMEA0183', 'UDP', 'localhost', '10110'): 
+					subprocess.call(['python3', currentdir+'/service.py', 'restart'])
+				else: print(_('Failed. Error creating connection in Signal K'))
+		except Exception as e: print(_('FAILED: ')+str(e))
+	'''
+
 	print(_('Setting version...'))
 	try:
-		conf2.set('APPS', 'sdr-vhf', version)
+		conf2.set('APPS', 'sdr_vhf', version)
 	except Exception as e: print(_('FAILED: ')+str(e))
 
 if __name__ == '__main__':

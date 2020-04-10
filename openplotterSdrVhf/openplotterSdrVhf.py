@@ -31,6 +31,8 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
 
 class MyFrame(wx.Frame):
 	def __init__(self):
+		from rtlsdr import RtlSdr
+
 		self.conf = conf.Conf()
 		self.conf_folder = self.conf.conf_folder
 		self.platform = platform.Platform()
@@ -127,8 +129,10 @@ class MyFrame(wx.Frame):
 
 	def pageSdrApps(self):
 		self.listApps = wx.ListCtrl(self.sdrApps, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,200))
-		self.listApps.InsertColumn(0, _('Name'), width=320)
-		self.listApps.InsertColumn(1, 'Status', width=365)
+		self.listApps.InsertColumn(0, _('Name'), width=135)
+		self.listApps.InsertColumn(1, _('Status'), width=135)
+		self.listApps.InsertColumn(2, _('Device index'), width=135)
+		self.listApps.InsertColumn(3, _('Device serial'), width=200)
 		self.listApps.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListAppsSelected)
 		self.listApps.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListAppsDeselected)
 		self.listApps.SetTextColour(wx.BLACK)
@@ -296,7 +300,7 @@ class MyFrame(wx.Frame):
 def main():
 	try:
 		platform2 = platform.Platform()
-		if not platform2.postInstall(version,'sdr-vhf'): 
+		if not platform2.postInstall(version,'sdr_vhf'): 
 			subprocess.Popen(['openplotterPostInstall', platform2.admin+' sdrVhfPostInstall'])
 			return
 	except: pass
