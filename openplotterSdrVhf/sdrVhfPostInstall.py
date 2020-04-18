@@ -60,34 +60,6 @@ def main():
 		subprocess.call((' systemctl daemon-reload').split())
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
-	
-	'''
-	if platform2.skDir:
-		print(_('Checking Signal K connection for SDR AIS...'))
-		try:
-			from openplotterSignalkInstaller import editSettings
-			skSettings = editSettings.EditSettings()
-			exists = False
-			if 'pipedProviders' in skSettings.data:
-				for i in skSettings.data['pipedProviders']:
-					try:
-						if i['pipeElements'][0]['options']['type']=='NMEA0183':
-							if i['pipeElements'][0]['options']['subOptions']['type']=='udp':
-								if i['pipeElements'][0]['options']['subOptions']['port']=='10110': exists = True
-					except Exception as e: print(str(e))
-			if not exists:
-				c = 0
-				ID = 'OpenPlotter NMEA 0183 input'
-				while True:
-					if skSettings.connectionIdExists(ID):
-						ID = ID+str(c)
-						c = c + 1
-					else: break
-				if skSettings.setNetworkConnection(ID, 'NMEA0183', 'UDP', 'localhost', '10110'): 
-					subprocess.call(['python3', currentdir+'/service.py', 'restart'])
-				else: print(_('Failed. Error creating connection in Signal K'))
-		except Exception as e: print(_('FAILED: ')+str(e))
-	'''
 
 	print(_('Setting version...'))
 	try:

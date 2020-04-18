@@ -35,15 +35,9 @@ if sys.argv[1]=='restartProcesses':
 	sdraisdeviceindex = conf2.get('SDR-VHF', 'sdraisdeviceindex')
 	if sdraisdeviceindex: subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
 	else: subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
-
-if sys.argv[1]=='start':
-	subprocess.call(['systemctl', 'start', 'signalk.socket'])
-	subprocess.call(['systemctl', 'start', 'signalk.service'])
-if sys.argv[1]=='stop':
-	subprocess.call(['systemctl', 'stop', 'signalk.service'])
-	subprocess.call(['systemctl', 'stop', 'signalk.socket'])
-if sys.argv[1]=='restart':
-	subprocess.call(['systemctl', 'stop', 'signalk.service'])
-	subprocess.call(['systemctl', 'stop', 'signalk.socket'])
-	subprocess.call(['systemctl', 'start', 'signalk.socket'])
-	subprocess.call(['systemctl', 'start', 'signalk.service'])
+	try:
+		subprocess.call(['systemctl', 'stop', 'signalk.service'])
+		subprocess.call(['systemctl', 'stop', 'signalk.socket'])
+		subprocess.call(['systemctl', 'start', 'signalk.socket'])
+		subprocess.call(['systemctl', 'start', 'signalk.service'])
+	except: pass

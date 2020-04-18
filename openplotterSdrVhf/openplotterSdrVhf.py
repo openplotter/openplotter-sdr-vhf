@@ -212,6 +212,7 @@ class MyFrame(wx.Frame):
 				self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(dlg.sdraisdeviceindex))
 				self.conf.set('SDR-VHF', 'sdraisppm', str(dlg.sdraisppm))
 				self.conf.set('SDR-VHF', 'sdraisport', str(dlg.sdraisport))
+				self.manageSKconnection(dlg.sdraisport)
 			if res == wx.CANCEL:
 				self.Close()
 				return
@@ -219,6 +220,26 @@ class MyFrame(wx.Frame):
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
 		time.sleep(1)
 		self.OnRefreshButton()
+
+	def manageSKconnection(self,port):
+		if self.platform.skDir:
+			from openplotterSignalkInstaller import editSettings
+			skSettings = editSettings.EditSettings()
+			ID = 'OpenPlotter SDR AIS'
+			if 'pipedProviders' in skSettings.data:
+				for i in skSettings.data['pipedProviders']:
+					try:
+						if ID in i['id']: 
+							skSettings.removeConnection(i['id'])
+						elif port:
+							if i['pipeElements'][0]['options']['type']=='NMEA0183':
+								if i['pipeElements'][0]['options']['subOptions']['type']=='udp':
+									if i['pipeElements'][0]['options']['subOptions']['port']==str(port): 
+										ID = i['id']
+					except Exception as e: print(str(e))
+			if ID == 'OpenPlotter SDR AIS':
+				if port: skSettings.setNetworkConnection(ID, 'NMEA0183', 'UDP', 'localhost', str(port))
+
 ################################################################################
 
 	def pageSystemd(self):
