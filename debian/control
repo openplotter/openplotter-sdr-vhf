@@ -10,6 +10,6 @@ X-Python3-Version: >= 3.2
 Package: openplotter-sdr-vhf
 Architecture: all
 Multi-Arch: foreign
-Depends: ${misc:Depends}, ${python3:Depends}, openplotter-settings, kalibrate-rtl, rtl-ais
+Depends: ${misc:Depends}, ${python3:Depends}, openplotter-settings, kalibrate-rtl, rtl-ais, rtl-sdr
 Description: Suite of applications for SDR reception in VHF range
  Suite of applications for SDR reception in VHF range

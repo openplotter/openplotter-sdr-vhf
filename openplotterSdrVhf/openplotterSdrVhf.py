@@ -31,8 +31,6 @@ class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
 
 class MyFrame(wx.Frame):
 	def __init__(self):
-		from rtlsdr import RtlSdr
-
 		self.conf = conf.Conf()
 		self.conf_folder = self.conf.conf_folder
 		self.platform = platform.Platform()
@@ -172,15 +170,24 @@ class MyFrame(wx.Frame):
 		self.toolbar2.EnableTool(201,False)
 
 	def OnRefreshButton(self, event=0):
+		from rtlsdr import RtlSdr
 		self.listApps.DeleteAllItems()
 		for i in self.appsDict:
 			item = self.listApps.InsertItem(0, i['name'])
-			if i['included']: self.listApps.SetItem(item, 1, _('installed'))
-			elif os.path.isfile('/etc/systemd/system/'+i['service']+'.service'):
+			if i['included'] or os.path.isfile('/etc/systemd/system/'+i['service']+'.service'): 
 				self.listApps.SetItem(item, 1, _('installed'))
+				if i['service'] == 'openplotter-rtl_ais':
+					sdraisdeviceindex = self.conf.get('SDR-VHF', 'sdraisdeviceindex')
+					if sdraisdeviceindex:
+						self.listApps.SetItem(item, 2, sdraisdeviceindex)
+						serial_numbers = RtlSdr.get_device_serial_addresses()
+						for ii in serial_numbers:
+							if sdraisdeviceindex == str(RtlSdr.get_device_index_by_serial(ii)):
+								self.listApps.SetItem(item, 3, ii)
 			else:
 				self.listApps.SetItem(item, 1, _('not installed'))
 				self.listApps.SetItemBackgroundColour(item,(200,200,200))
+
 		self.onListAppsDeselected()
 		try: self.set_listSystemd()
 		except: pass
@@ -192,8 +199,26 @@ class MyFrame(wx.Frame):
 		pass
 
 	def OnEditButton(self, e):
-		pass
-
+		i = self.listApps.GetFirstSelected()
+		if i == -1: return
+		apps = list(reversed(self.appsDict))
+		index = self.listApps.GetItemText(i, 2)
+		serial = self.listApps.GetItemText(i, 3)
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+		if apps[i]['service'] == 'openplotter-rtl_ais':
+			dlg = editSdrAis(index,serial,self.conf)
+			res = dlg.ShowModal()
+			if res == wx.OK:
+				self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(dlg.sdraisdeviceindex))
+				self.conf.set('SDR-VHF', 'sdraisppm', str(dlg.sdraisppm))
+				self.conf.set('SDR-VHF', 'sdraisport', str(dlg.sdraisport))
+			if res == wx.CANCEL:
+				self.Close()
+				return
+			dlg.Destroy()
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
+		time.sleep(1)
+		self.OnRefreshButton()
 ################################################################################
 
 	def pageSystemd(self):
@@ -269,6 +294,7 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Starting process...'))
 		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]).split())
+		time.sleep(1)
 		self.set_listSystemd()
 		self.ShowStatusBarGREEN(_('Done'))
 
@@ -277,6 +303,7 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Stopping process...'))
 		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]).split())
+		time.sleep(1)
 		self.set_listSystemd()
 		self.ShowStatusBarGREEN(_('Done'))
 
@@ -285,6 +312,7 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Restarting process...'))
 		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]).split())
+		time.sleep(1)
 		self.set_listSystemd()
 		self.ShowStatusBarGREEN(_('Done'))
 		
@@ -294,6 +322,211 @@ class MyFrame(wx.Frame):
 			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]).split())
 		else:
 			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]).split())
+
+################################################################################
+
+class editSdrAis(wx.Dialog):
+	def __init__(self, deviceIndex, deviceSerial, conf):
+		self.deviceIndex = deviceIndex
+		self.deviceSerial = deviceSerial
+		self.conf = conf
+		self.currentdir = os.path.dirname(os.path.abspath(__file__))
+
+		wx.Dialog.__init__(self, None, title=_('Editing SDR AIS'), size=(500,444))
+		panel = wx.Panel(self)
+
+		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
+		self.listDev = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,100))
+		self.listDev.InsertColumn(0, _('Index'), width=80)
+		self.listDev.InsertColumn(1, _('Serial'), width=145)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListDevSelected)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
+		self.listDev.SetTextColour(wx.BLACK)
+
+		self.serial = wx.TextCtrl(panel)
+		self.serial.SetMaxLength(8)
+		self.setSerial = wx.Button(panel, label=_('Change serial'))
+		self.Bind(wx.EVT_BUTTON, self.onSetSerial, self.setSerial)
+
+		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
+		ppmLabel = wx.StaticText(panel, label='PPM')
+		self.ppm = wx.TextCtrl(panel)
+		portLabel = wx.StaticText(panel, label=_('Output UDP port'))
+		self.port = wx.TextCtrl(panel)
+
+		calibrationLabel = wx.StaticBox(panel, label=_(' Calibration '))
+		self.button_test_gain = wx.Button(panel, label=_('Initial PPM'))
+		self.Bind(wx.EVT_BUTTON, self.onTestDevice, self.button_test_gain)
+
+		bands_label = wx.StaticText(panel, label=_('Band'))
+		self.band = wx.ComboBox(panel, choices = ['GSM850', 'GSM-R', 'GSM900', 'EGSM', 'DCS', 'PCS'], style = wx.CB_READONLY)
+		self.getChannel = wx.Button(panel, label =_('Get channel'))
+		self.Bind(wx.EVT_BUTTON, self.onGetChannel, self.getChannel)
+
+		channel_label = wx.StaticText(panel, label =_('Channel'))
+		self.channel = wx.TextCtrl(panel)
+		self.getPpm = wx.Button(panel, label=_('Get PPM'))
+		self.Bind(wx.EVT_BUTTON, self.onGetPpm, self.getPpm)
+
+		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
+		deleteBtn = wx.Button(panel, label=_('Delete'))
+		deleteBtn.Bind(wx.EVT_BUTTON, self.OnDelete)
+		okBtn = wx.Button(panel, wx.ID_OK)
+		okBtn.Bind(wx.EVT_BUTTON, self.OnOk)
+
+		setSerialBox = wx.BoxSizer(wx.HORIZONTAL)
+		setSerialBox.Add(self.setSerial, 0, wx.ALL | wx.EXPAND, 0)
+		setSerialBox.Add(self.serial, 1, wx.LEFT | wx.EXPAND, 5)
+
+		listDevLabelBox = wx.StaticBoxSizer(listDevLabel, wx.VERTICAL)
+		listDevLabelBox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
+		listDevLabelBox.AddSpacer(5)
+		listDevLabelBox.Add(setSerialBox, 0, wx.ALL | wx.EXPAND, 5)
+		listDevLabelBox.AddSpacer(5)
+
+		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
+		finalBox.Add(ppmLabel, 0, wx.LEFT | wx.UP, 10)
+		finalBox.Add(self.ppm, 0, wx.LEFT | wx.UP, 10)
+		finalBox.Add(portLabel, 0, wx.LEFT | wx.UP, 10)
+		finalBox.Add(self.port, 0, wx.LEFT | wx.UP, 10)
+
+		firstBox = wx.BoxSizer(wx.HORIZONTAL)
+		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
+		firstBox.Add(finalBox, 1, wx.ALL | wx.EXPAND, 5)
+
+		testBox = wx.BoxSizer(wx.VERTICAL)
+		testBox.Add(self.button_test_gain, 0, wx.ALL | wx.EXPAND, 5)
+		testBox.AddStretchSpacer(1)
+
+		bandBox = wx.BoxSizer(wx.VERTICAL)
+		bandBox.Add(bands_label, 0, wx.ALL | wx.EXPAND, 5)
+		bandBox.Add(self.band, 0, wx.ALL | wx.EXPAND, 5)
+		bandBox.Add(self.getChannel, 0, wx.ALL | wx.EXPAND, 5)
+
+		channelBox = wx.BoxSizer(wx.VERTICAL)
+		channelBox.Add(channel_label, 0, wx.ALL | wx.EXPAND, 5)
+		channelBox.Add(self.channel, 0, wx.ALL | wx.EXPAND, 5)
+		channelBox.Add(self.getPpm, 0, wx.ALL | wx.EXPAND, 5)
+
+		calibrationLabelBox = wx.StaticBoxSizer(calibrationLabel, wx.HORIZONTAL)
+		calibrationLabelBox.Add(testBox, 1, wx.ALL | wx.EXPAND, 10)
+		calibrationLabelBox.Add(bandBox, 1, wx.ALL | wx.EXPAND, 10)
+		calibrationLabelBox.Add(channelBox, 1, wx.ALL | wx.EXPAND, 10)
+
+		hbox = wx.BoxSizer(wx.HORIZONTAL)
+		hbox.Add(cancelBtn, 1, wx.ALL | wx.EXPAND, 5)
+		hbox.Add(deleteBtn, 1, wx.ALL | wx.EXPAND, 5)
+		hbox.Add(okBtn, 1, wx.ALL | wx.EXPAND, 5)
+
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		vbox.Add(firstBox, 0, wx.ALL | wx.EXPAND, 0)
+		vbox.Add(calibrationLabelBox, 0, wx.ALL | wx.EXPAND, 5)
+		vbox.AddStretchSpacer(1)
+		vbox.Add(hbox, 0, wx.EXPAND, 0)
+
+		panel.SetSizer(vbox)
+		self.Centre()
+
+		self.read()
+
+	def read(self):
+		from rtlsdr import RtlSdr
+		self.onListDevDeselected()
+		serial_numbers = RtlSdr.get_device_serial_addresses()
+		for i in serial_numbers:
+			device_index = RtlSdr.get_device_index_by_serial(i)
+			item = self.listDev.InsertItem(0, str(device_index))
+			self.listDev.SetItem(item, 1, str(i))
+		if self.deviceIndex and self.deviceSerial:
+			for i in range(self.listDev.GetItemCount()):
+				if str(self.deviceIndex) == self.listDev.GetItemText(i, 0) and str(self.deviceSerial) == self.listDev.GetItemText(i, 1):
+					self.listDev.Select(i)
+					self.serial.SetValue(self.listDev.GetItemText(i, 1))
+					self.onListDevSelected()
+
+		sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
+		if not sdraisppm: sdraisppm = '0'
+		self.ppm.SetValue(sdraisppm)
+
+		sdraisport = self.conf.get('SDR-VHF', 'sdraisport')
+		if not sdraisport: sdraisport = '10110'
+		self.port.SetValue(sdraisport)
+
+	def onListDevSelected(self,e=0):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.serial.SetValue(self.listDev.GetItemText(i, 1))
+		self.serial.Enable()
+		self.setSerial.Enable()
+		self.button_test_gain.Enable()
+		self.getChannel.Enable()
+		self.getPpm.Enable()
+		self.band.Enable()
+		self.channel.Enable()
+
+	def onListDevDeselected(self,e=0):
+		self.serial.Disable()
+		self.setSerial.Disable()
+		self.button_test_gain.Disable()
+		self.getChannel.Disable()
+		self.getPpm.Disable()
+		self.band.Disable()
+		self.channel.Disable()
+
+	def onKillProcesses(self):
+		subprocess.call(['pkill', '-15', 'rtl_test'])
+		subprocess.call(['pkill', '-15', 'kal'])
+		subprocess.call(['pkill', '-15', 'rtl_eeprom'])
+		time.sleep(1)
+
+	def onTestDevice(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.onKillProcesses()
+		subprocess.call(['x-terminal-emulator','-e', 'rtl_test', '-d', self.listDev.GetItemText(i, 0), '-p'])
+
+	def onSetSerial(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.onKillProcesses()
+		subprocess.Popen(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/rtl_eeprom.sh', self.listDev.GetItemText(i, 0), self.serial.GetValue(), _('Please replug the device for changes to take effect and restart SDR processes manually. Press Enter to close this window.')])
+		self.EndModal(wx.CANCEL)
+
+	def onGetChannel(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.onKillProcesses()
+		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 's', self.band.GetValue(), self.ppm.GetValue(), _('Take note of the channel with the highest power value and press Enter to close this window.')])
+
+	def onGetPpm(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.onKillProcesses()
+		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 'c', self.channel.GetValue(), self.ppm.GetValue(), _('Take note of the final ppm value rounded to the nearest integer and press Enter to close this window.')])
+
+	def OnOk(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1:
+			wx.MessageBox(_('Please select a device.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			return
+		self.sdraisdeviceindex = self.listDev.GetItemText(i, 0)
+		try:
+			self.sdraisppm = int(self.ppm.GetValue())
+		except:
+			wx.MessageBox(_('PPM value must be an entire number.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			return
+		try:
+			self.sdraisport = int(self.port.GetValue())
+		except:
+			wx.MessageBox(_('UDP port value must be an entire number.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			return
+		self.EndModal(wx.OK)
+
+	def OnDelete(self,e):
+		self.sdraisdeviceindex = ''
+		self.sdraisppm = ''
+		self.sdraisport = ''
+		self.EndModal(wx.OK)
 
 ################################################################################
 

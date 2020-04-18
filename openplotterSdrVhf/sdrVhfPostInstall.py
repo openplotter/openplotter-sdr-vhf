@@ -36,17 +36,6 @@ def main():
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
-	print(_('Checking SDR AIS settings...'))
-	try:
-		sdrAisDeviceIndex = conf2.get('SDR-VHF', 'sdraisdeviceindex')
-		sdrAisPPM = conf2.get('SDR-VHF', 'sdraisppm')
-		sdrAisPort = conf2.get('SDR-VHF', 'sdraisport')
-		if not sdrAisDeviceIndex: conf2.set('SDR-VHF', 'sdraisdeviceindex', '0')
-		if not sdrAisPPM: conf2.set('SDR-VHF', 'sdraisppm', '0')
-		if not sdrAisPort: conf2.set('SDR-VHF', 'sdraisport', '10110')
-		print(_('DONE'))
-	except Exception as e: print(_('FAILED: ')+str(e))
-
 	print(_('Adding rtl_ais service...'))
 	try:
 		fo = open('/etc/systemd/system/openplotter-rtl_ais.service', "w")

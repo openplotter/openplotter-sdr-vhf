@@ -15,7 +15,26 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
-import sys, subprocess
+import sys, subprocess, time
+from openplotterSettings import conf
+
+def onKillProcesses():
+	subprocess.call(['pkill', '-15', 'rtl_test'])
+	subprocess.call(['pkill', '-15', 'kal'])
+	subprocess.call(['pkill', '-15', 'rtl_eeprom'])
+	time.sleep(1)
+
+conf2 = conf.Conf()
+
+if sys.argv[1]=='stopProcesses':
+	onKillProcesses()
+	subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
+
+if sys.argv[1]=='restartProcesses':
+	onKillProcesses()
+	sdraisdeviceindex = conf2.get('SDR-VHF', 'sdraisdeviceindex')
+	if sdraisdeviceindex: subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
+	else: subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
 
 if sys.argv[1]=='start':
 	subprocess.call(['systemctl', 'start', 'signalk.socket'])
