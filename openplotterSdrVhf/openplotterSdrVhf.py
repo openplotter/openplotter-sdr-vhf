@@ -64,7 +64,7 @@ class MyFrame(wx.Frame):
 		self.notebook.AddPage(self.sdrApps, _('SDR apps'))
 		self.notebook.AddPage(self.systemd, _('Processes'))
 		self.il = wx.ImageList(24, 24)
-		img0 = self.il.Add(wx.Bitmap(self.currentdir+"/data/openplotter-24.png", wx.BITMAP_TYPE_PNG))
+		img0 = self.il.Add(wx.Bitmap(self.currentdir+"/data/sdr.png", wx.BITMAP_TYPE_PNG))
 		img1 = self.il.Add(wx.Bitmap(self.currentdir+"/data/process.png", wx.BITMAP_TYPE_PNG))
 		self.notebook.AssignImageList(self.il)
 		self.notebook.SetPageImage(0, img0)
