@@ -61,9 +61,18 @@ def main():
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
+	print(_('Copying udev rules...'))
+	try:
+		subprocess.call(['cp', '-f', currentdir+'/data/rtl-sdr.rules', '/etc/udev/rules.d/'])
+		subprocess.call(['udevadm', 'control', '--reload-rules'])
+		subprocess.call(['udevadm', 'trigger'])
+		print(_('DONE'))
+	except Exception as e: print(_('FAILED: ')+str(e))
+
 	print(_('Setting version...'))
 	try:
 		conf2.set('APPS', 'sdr_vhf', version)
+		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
 if __name__ == '__main__':
