@@ -1,11 +1,11 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: openplotter-sdr-vhf\n"
-"POT-Creation-Date: 2020-04-20 19:12+0200\n"
+"Project-Id-Version: openplotter\n"
+"POT-Creation-Date: 2020-04-18 20:49+0200\n"
 "PO-Revision-Date: 2020-04-20 19:15+0200\n"
 "Last-Translator: \n"
-"Language-Team: \n"
-"Language: en\n"
+"Language-Team: Italian\n"
+"Language: it\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -13,6 +13,9 @@ msgstr ""
 "X-Poedit-Basepath: ../../..\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
+"X-Crowdin-Project: openplotter\n"
+"X-Crowdin-Language: it\n"
+"X-Crowdin-File: openplotter-sdr-vhf.po\n"
 "X-Poedit-SearchPath-0: .\n"
 
 #: openplotterSdrVhf.py:51
@@ -180,21 +183,15 @@ msgid "Delete"
 msgstr ""
 
 #: openplotterSdrVhf.py:513
-msgid ""
-"Please replug the device for changes to take effect and restart SDR "
-"processes manually. Press Enter to close this window."
+msgid "Please replug the device for changes to take effect and restart SDR processes manually. Press Enter to close this window."
 msgstr ""
 
 #: openplotterSdrVhf.py:520
-msgid ""
-"Take note of the channel with the highest power value and press Enter to "
-"close this window."
+msgid "Take note of the channel with the highest power value and press Enter to close this window."
 msgstr ""
 
 #: openplotterSdrVhf.py:526
-msgid ""
-"Take note of the final ppm value rounded to the nearest integer and press "
-"Enter to close this window."
+msgid "Take note of the final ppm value rounded to the nearest integer and press Enter to close this window."
 msgstr ""
 
 #: openplotterSdrVhf.py:531
@@ -221,15 +218,13 @@ msgstr ""
 msgid "Installing python packages..."
 msgstr ""
 
-#: sdrVhfPostInstall.py:36 sdrVhfPostInstall.py:61 sdrVhfPostInstall.py:69
-#: sdrVhfPostInstall.py:75 sdrVhfPreUninstall.py:33 sdrVhfPreUninstall.py:42
-#: sdrVhfPreUninstall.py:48
+#: sdrVhfPostInstall.py:36 sdrVhfPostInstall.py:61 sdrVhfPreUninstall.py:33
+#: sdrVhfPreUninstall.py:42 sdrVhfPreUninstall.py:48
 msgid "DONE"
 msgstr ""
 
-#: sdrVhfPostInstall.py:37 sdrVhfPostInstall.py:62 sdrVhfPostInstall.py:70
-#: sdrVhfPostInstall.py:76 sdrVhfPreUninstall.py:34 sdrVhfPreUninstall.py:43
-#: sdrVhfPreUninstall.py:49
+#: sdrVhfPostInstall.py:37 sdrVhfPostInstall.py:62 sdrVhfPostInstall.py:67
+#: sdrVhfPreUninstall.py:34 sdrVhfPreUninstall.py:43 sdrVhfPreUninstall.py:49
 msgid "FAILED: "
 msgstr ""
 
@@ -238,10 +233,6 @@ msgid "Adding rtl_ais service..."
 msgstr ""
 
 #: sdrVhfPostInstall.py:64
-msgid "Copying udev rules..."
-msgstr ""
-
-#: sdrVhfPostInstall.py:72
 msgid "Setting version..."
 msgstr ""
 
