@@ -22,6 +22,7 @@ def onKillProcesses():
 	subprocess.call(['pkill', '-15', 'rtl_test'])
 	subprocess.call(['pkill', '-15', 'kal'])
 	subprocess.call(['pkill', '-15', 'rtl_eeprom'])
+	subprocess.call(['pkill', '-15', 'gqrx'])
 	time.sleep(1)
 
 conf2 = conf.Conf()

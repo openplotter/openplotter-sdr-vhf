@@ -16,7 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
 
-import wx, os, sys, webbrowser, subprocess, time
+import wx, os, sys, webbrowser, subprocess, time, configparser
+import wx.richtext as rt
 from openplotterSettings import conf
 from openplotterSettings import language
 from openplotterSettings import platform
@@ -64,14 +65,18 @@ class MyFrame(wx.Frame):
 		self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChange)
 		self.sdrApps = wx.Panel(self.notebook)
 		self.systemd = wx.Panel(self.notebook)
+		self.output = wx.Panel(self.notebook)
 		self.notebook.AddPage(self.sdrApps, _('SDR apps'))
 		self.notebook.AddPage(self.systemd, _('Processes'))
+		self.notebook.AddPage(self.output, '')
 		self.il = wx.ImageList(24, 24)
 		img0 = self.il.Add(wx.Bitmap(self.currentdir+"/data/sdr.png", wx.BITMAP_TYPE_PNG))
 		img1 = self.il.Add(wx.Bitmap(self.currentdir+"/data/process.png", wx.BITMAP_TYPE_PNG))
+		img2 = self.il.Add(wx.Bitmap(self.currentdir+"/data/output.png", wx.BITMAP_TYPE_PNG))
 		self.notebook.AssignImageList(self.il)
 		self.notebook.SetPageImage(0, img0)
 		self.notebook.SetPageImage(1, img1)
+		self.notebook.SetPageImage(2, img2)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(self.toolbar1, 0, wx.EXPAND)
@@ -81,15 +86,30 @@ class MyFrame(wx.Frame):
 		self.appsDict = []
 
 		app = {
+		'name': 'GQRX',
+		'included': False,
+		'show': 'gqrx',
+		'service': '',
+		'edit': False,
+		'install': self.platform.admin+' python3 '+self.currentdir+'/installGqrx.py',
+		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallGqrx.py',
+		}
+		self.appsDict.append(app)
+
+		app = {
 		'name': 'AIS',
 		'included': True,
+		'show': '',
 		'service': 'openplotter-rtl_ais',
 		'edit': True,
+		'install': '',
+		'uninstall': '',
 		}
 		self.appsDict.append(app)
 
 		self.pageSdrApps()
 		self.pageSystemd()
+		self.pageOutput()
 
 		maxi = self.conf.get('GENERAL', 'maximize')
 		if maxi == '1': self.Maximize()
@@ -148,6 +168,9 @@ class MyFrame(wx.Frame):
 		self.listApps.SetTextColour(wx.BLACK)
 
 		self.toolbar2 = wx.ToolBar(self.sdrApps, style=wx.TB_TEXT | wx.TB_VERTICAL)
+		self.showButton = self.toolbar2.AddTool(202, _('Show'), wx.Bitmap(self.currentdir+"/data/show.png"))
+		self.Bind(wx.EVT_TOOL, self.OnShowButton, self.showButton)
+		self.toolbar2.AddSeparator()
 		self.editButton = self.toolbar2.AddTool(201, _('Edit'), wx.Bitmap(self.currentdir+"/data/edit.png"))
 		self.Bind(wx.EVT_TOOL, self.OnEditButton, self.editButton)
 		self.toolbar2.AddSeparator()
@@ -169,46 +192,113 @@ class MyFrame(wx.Frame):
 		if not valid: return
 		self.onListAppsDeselected()
 		apps = list(reversed(self.appsDict))
+		if not apps[i]['included']:
+			self.toolbar2.EnableTool(203,True)
+			self.toolbar2.EnableTool(205,True)
 		if self.listApps.GetItemBackgroundColour(i) != (200,200,200):
-			if not apps[i]['included']:
-				self.toolbar2.EnableTool(203,True)
-				self.toolbar2.EnableTool(205,True)
-			if apps[i]['edit']: self.toolbar2.EnableTool(201,True)
-		else: self.toolbar2.EnableTool(203,True)
+			if apps[i]['edit']:
+				self.toolbar2.EnableTool(201,True)
+			if apps[i]['show']: self.toolbar2.EnableTool(202,True)
 
 	def onListAppsDeselected(self, event=0):
+		self.toolbar2.EnableTool(202,False)
 		self.toolbar2.EnableTool(203,False)
 		self.toolbar2.EnableTool(205,False)
 		self.toolbar2.EnableTool(201,False)
 
 	def OnRefreshButton(self, event=0):
 		from rtlsdr import RtlSdr
+		serial_numbers = RtlSdr.get_device_serial_addresses()
 		self.listApps.DeleteAllItems()
 		for i in self.appsDict:
 			item = self.listApps.InsertItem(0, i['name'])
-			if i['included'] or os.path.isfile('/etc/systemd/system/'+i['service']+'.service'): 
+			if i['name'] == 'AIS': 
 				self.listApps.SetItem(item, 1, _('installed'))
-				if i['service'] == 'openplotter-rtl_ais':
-					sdraisdeviceindex = self.conf.get('SDR-VHF', 'sdraisdeviceindex')
-					if sdraisdeviceindex:
-						self.listApps.SetItem(item, 2, sdraisdeviceindex)
-						serial_numbers = RtlSdr.get_device_serial_addresses()
-						for ii in serial_numbers:
-							if sdraisdeviceindex == str(RtlSdr.get_device_index_by_serial(ii)):
-								self.listApps.SetItem(item, 3, ii)
-			else:
-				self.listApps.SetItem(item, 1, _('not installed'))
-				self.listApps.SetItemBackgroundColour(item,(200,200,200))
-
+				sdraisdeviceindex = self.conf.get('SDR-VHF', 'sdraisdeviceindex')
+				if sdraisdeviceindex:
+					self.listApps.SetItem(item, 2, sdraisdeviceindex)
+					for ii in serial_numbers:
+						if sdraisdeviceindex == str(RtlSdr.get_device_index_by_serial(ii)):
+							self.listApps.SetItem(item, 3, ii)
+			elif i['name'] == 'GQRX':
+				if not os.path.isdir(self.conf.home+'/.config/gqrx'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+					try:
+						device = ''
+						gqrx_conf = configparser.ConfigParser()
+						gqrx_conf.read(self.conf.home+'/.config/gqrx/default.conf')
+						inputDevice = gqrx_conf.get('input', 'device')
+						inputDevice = inputDevice.replace('"','')
+						inputDevice = inputDevice.split('=')
+						if inputDevice[0] == 'rtl': device = inputDevice[1]
+						if device:
+							self.listApps.SetItem(item, 2, device)
+							for ii in serial_numbers:
+								if device == str(RtlSdr.get_device_index_by_serial(ii)):
+									self.listApps.SetItem(item, 3, ii)
+					except Exception as e: print('error getting gqrx settings: '+str(e))
+		listCount = range(self.listApps.GetItemCount())
+		for i in listCount:
+			index = self.listApps.GetItemText(i, 2)
+			for ii in listCount:
+				if self.listApps.GetItemText(ii, 2) == index and i != ii:
+					if self.listApps.GetItemText(i, 0) == 'AIS' or self.listApps.GetItemText(ii, 0) == 'AIS':
+						command = 'systemctl show openplotter-rtl_ais --no-page'
+						output = subprocess.check_output(command.split(),universal_newlines=True)
+						if 'SubState=running' in output: self.listApps.SetItemBackgroundColour(i,(255,0,0))
+					else:
+						self.listApps.SetItemBackgroundColour(i,(255,0,0))
 		self.onListAppsDeselected()
 		try: self.set_listSystemd()
 		except: pass
 
 	def OnToolInstall(self, e):
-		pass
+		index = self.listApps.GetFirstSelected()
+		if index == -1: return
+		apps = list(reversed(self.appsDict))
+		name = apps[index]['name']
+		command = apps[index]['install']
+		if command:
+			msg = _('Are you sure you want to install ')+name+_(' and its dependencies?')
+			dlg = wx.MessageDialog(None, msg, _('Question'), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_EXCLAMATION)
+			if dlg.ShowModal() == wx.ID_YES:
+				self.logger.Clear()
+				self.notebook.ChangeSelection(2)
+				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
+				for line in popen.stdout:
+					if not 'Warning' in line and not 'WARNING' in line:
+						self.logger.WriteText(line)
+						self.ShowStatusBarYELLOW(_('Installing SDR app, please wait... ')+line)
+						self.logger.ShowPosition(self.logger.GetLastPosition())
+				self.OnRefreshButton()
+				self.notebook.ChangeSelection(0)
+				if name == 'GQRX': subprocess.call(['pulseaudio', '--start'])
+			dlg.Destroy()
 
 	def OnToolUninstall(self, e):
-		pass
+		index = self.listApps.GetFirstSelected()
+		if index == -1: return
+		apps = list(reversed(self.appsDict))
+		name = apps[index]['name']
+		command = apps[index]['uninstall']
+		if command:
+			msg = _('Are you sure you want to uninstall ')+name+_(' and its dependencies?')
+			dlg = wx.MessageDialog(None, msg, _('Question'), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_EXCLAMATION)
+			if dlg.ShowModal() == wx.ID_YES:
+				self.logger.Clear()
+				self.notebook.ChangeSelection(2)
+				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
+				for line in popen.stdout:
+					if not 'Warning' in line and not 'WARNING' in line:
+						self.logger.WriteText(line)
+						self.ShowStatusBarYELLOW(_('Uninstalling SDR app, please wait... ')+line)
+						self.logger.ShowPosition(self.logger.GetLastPosition())
+				self.OnRefreshButton()
+				self.notebook.ChangeSelection(0)
+			dlg.Destroy()
 
 	def OnEditButton(self, e):
 		i = self.listApps.GetFirstSelected()
@@ -248,6 +338,13 @@ class MyFrame(wx.Frame):
 					except Exception as e: print(str(e))
 			if ID == 'OpenPlotter SDR AIS':
 				if port: skSettings.setNetworkConnection(ID, 'NMEA0183', 'UDP', 'localhost', str(port))
+
+	def OnShowButton(self, e):
+		index = self.listApps.GetFirstSelected()
+		if index == -1: return
+		apps = list(reversed(self.appsDict))
+		show = apps[index]['show']
+		if show: subprocess.Popen(show)
 
 ################################################################################
 
@@ -302,7 +399,7 @@ class MyFrame(wx.Frame):
 	def set_listSystemd(self):
 		self.process = []
 		for i in self.appsDict:
-			self.process.append(i['service'])
+			if i['service']: self.process.append(i['service'])
 		self.listSystemd.DeleteAllItems()
 		index = 1
 		for i in self.process:
@@ -323,9 +420,10 @@ class MyFrame(wx.Frame):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Starting process...'))
+		self.onKillProcesses()
 		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]).split())
 		time.sleep(1)
-		self.set_listSystemd()
+		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
 
 	def onStop(self,e):
@@ -334,16 +432,17 @@ class MyFrame(wx.Frame):
 		self.ShowStatusBarYELLOW(_('Stopping process...'))
 		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]).split())
 		time.sleep(1)
-		self.set_listSystemd()
+		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
 
 	def onRestart(self,e):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Restarting process...'))
+		self.onKillProcesses()
 		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]).split())
 		time.sleep(1)
-		self.set_listSystemd()
+		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
 		
 	def OnCheckItem(self, index, flag):
@@ -352,6 +451,23 @@ class MyFrame(wx.Frame):
 			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]).split())
 		else:
 			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]).split())
+
+	def onKillProcesses(self):
+		subprocess.call(['pkill', '-15', 'rtl_test'])
+		subprocess.call(['pkill', '-15', 'kal'])
+		subprocess.call(['pkill', '-15', 'rtl_eeprom'])
+		subprocess.call(['pkill', '-15', 'gqrx'])
+		time.sleep(1)
+
+################################################################################
+
+	def pageOutput(self):
+		self.logger = rt.RichTextCtrl(self.output, style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_DONTWRAP|wx.LC_SORT_ASCENDING)
+		self.logger.SetMargins((10,10))
+
+		sizer = wx.BoxSizer(wx.VERTICAL)
+		sizer.Add(self.logger, 1, wx.EXPAND, 0)
+		self.output.SetSizer(sizer)
 
 ################################################################################
 
@@ -489,6 +605,7 @@ class editSdrAis(wx.Dialog):
 		subprocess.call(['pkill', '-15', 'rtl_test'])
 		subprocess.call(['pkill', '-15', 'kal'])
 		subprocess.call(['pkill', '-15', 'rtl_eeprom'])
+		subprocess.call(['pkill', '-15', 'gqrx'])
 		time.sleep(1)
 
 	def onTestDevice(self,e):
