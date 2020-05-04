@@ -54,6 +54,9 @@ class MyFrame(wx.Frame):
 		toolSettings = self.toolbar1.AddTool(102, _('Settings'), wx.Bitmap(self.currentdir+"/data/settings.png"))
 		self.Bind(wx.EVT_TOOL, self.OnToolSettings, toolSettings)
 		self.toolbar1.AddSeparator()
+		self.editSerialButton = self.toolbar1.AddTool(103, _('Edit device serial number'), wx.Bitmap(self.currentdir+"/data/serial.png"))
+		self.Bind(wx.EVT_TOOL, self.OnEditSerialButton, self.editSerialButton)
+		self.toolbar1.AddSeparator()
 		self.refreshButton = self.toolbar1.AddTool(104, _('Refresh'), wx.Bitmap(self.currentdir+"/data/refresh.png"))
 		self.Bind(wx.EVT_TOOL, self.OnRefreshButton, self.refreshButton)
 
@@ -122,6 +125,15 @@ class MyFrame(wx.Frame):
 	def OnToolSettings(self, event=0): 
 		subprocess.call(['pkill', '-f', 'openplotter-settings'])
 		subprocess.Popen('openplotter-settings')
+
+	def OnEditSerialButton(self,e):
+		dlg = editSerial()
+		res = dlg.ShowModal()
+		if res == wx.OK:
+			self.Close()
+			self.Destroy()
+			return
+		dlg.Destroy()
 
 ################################################################################
 
@@ -213,9 +225,6 @@ class MyFrame(wx.Frame):
 				self.conf.set('SDR-VHF', 'sdraisppm', str(dlg.sdraisppm))
 				self.conf.set('SDR-VHF', 'sdraisport', str(dlg.sdraisport))
 				self.manageSKconnection(dlg.sdraisport)
-			if res == wx.CANCEL:
-				self.Close()
-				return
 			dlg.Destroy()
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
 		time.sleep(1)
@@ -364,11 +373,6 @@ class editSdrAis(wx.Dialog):
 		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
 		self.listDev.SetTextColour(wx.BLACK)
 
-		self.serial = wx.TextCtrl(panel)
-		self.serial.SetMaxLength(8)
-		self.setSerial = wx.Button(panel, label=_('Change serial'))
-		self.Bind(wx.EVT_BUTTON, self.onSetSerial, self.setSerial)
-
 		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
 		ppmLabel = wx.StaticText(panel, label='PPM')
 		self.ppm = wx.TextCtrl(panel)
@@ -395,14 +399,8 @@ class editSdrAis(wx.Dialog):
 		okBtn = wx.Button(panel, wx.ID_OK)
 		okBtn.Bind(wx.EVT_BUTTON, self.OnOk)
 
-		setSerialBox = wx.BoxSizer(wx.HORIZONTAL)
-		setSerialBox.Add(self.setSerial, 0, wx.ALL | wx.EXPAND, 0)
-		setSerialBox.Add(self.serial, 1, wx.LEFT | wx.EXPAND, 5)
-
 		listDevLabelBox = wx.StaticBoxSizer(listDevLabel, wx.VERTICAL)
 		listDevLabelBox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
-		listDevLabelBox.AddSpacer(5)
-		listDevLabelBox.Add(setSerialBox, 0, wx.ALL | wx.EXPAND, 5)
 		listDevLabelBox.AddSpacer(5)
 
 		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
@@ -440,10 +438,9 @@ class editSdrAis(wx.Dialog):
 		hbox.Add(okBtn, 1, wx.ALL | wx.EXPAND, 5)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(firstBox, 0, wx.ALL | wx.EXPAND, 0)
-		vbox.Add(calibrationLabelBox, 0, wx.ALL | wx.EXPAND, 5)
-		vbox.AddStretchSpacer(1)
-		vbox.Add(hbox, 0, wx.EXPAND, 0)
+		vbox.Add(firstBox, 1, wx.ALL | wx.EXPAND, 0)
+		vbox.Add(calibrationLabelBox, 1, wx.ALL | wx.EXPAND, 5)
+		vbox.Add(hbox, 0, wx.EXPAND, 10)
 
 		panel.SetSizer(vbox)
 		self.Centre()
@@ -462,7 +459,6 @@ class editSdrAis(wx.Dialog):
 			for i in range(self.listDev.GetItemCount()):
 				if str(self.deviceIndex) == self.listDev.GetItemText(i, 0) and str(self.deviceSerial) == self.listDev.GetItemText(i, 1):
 					self.listDev.Select(i)
-					self.serial.SetValue(self.listDev.GetItemText(i, 1))
 					self.onListDevSelected()
 
 		sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
@@ -476,9 +472,6 @@ class editSdrAis(wx.Dialog):
 	def onListDevSelected(self,e=0):
 		i = self.listDev.GetFirstSelected()
 		if i == -1: return
-		self.serial.SetValue(self.listDev.GetItemText(i, 1))
-		self.serial.Enable()
-		self.setSerial.Enable()
 		self.button_test_gain.Enable()
 		self.getChannel.Enable()
 		self.getPpm.Enable()
@@ -486,8 +479,6 @@ class editSdrAis(wx.Dialog):
 		self.channel.Enable()
 
 	def onListDevDeselected(self,e=0):
-		self.serial.Disable()
-		self.setSerial.Disable()
 		self.button_test_gain.Disable()
 		self.getChannel.Disable()
 		self.getPpm.Disable()
@@ -506,13 +497,6 @@ class editSdrAis(wx.Dialog):
 		self.onKillProcesses()
 		subprocess.call(['x-terminal-emulator','-e', 'rtl_test', '-d', self.listDev.GetItemText(i, 0), '-p'])
 
-	def onSetSerial(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.onKillProcesses()
-		subprocess.Popen(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/rtl_eeprom.sh', self.listDev.GetItemText(i, 0), self.serial.GetValue(), _('Please replug the device for changes to take effect and restart SDR processes manually. Press Enter to close this window.')])
-		self.EndModal(wx.CANCEL)
-
 	def onGetChannel(self,e):
 		i = self.listDev.GetFirstSelected()
 		if i == -1: return
@@ -523,7 +507,7 @@ class editSdrAis(wx.Dialog):
 		i = self.listDev.GetFirstSelected()
 		if i == -1: return
 		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 'c', self.channel.GetValue(), self.ppm.GetValue(), _('Take note of the final ppm value rounded to the nearest integer and press Enter to close this window.')])
+		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 'c', self.channel.GetValue(), self.ppm.GetValue(), _('Take note of the final ppm value rounded to the nearest whole number and press Enter to close this window.')])
 
 	def OnOk(self,e):
 		i = self.listDev.GetFirstSelected()
@@ -534,12 +518,12 @@ class editSdrAis(wx.Dialog):
 		try:
 			self.sdraisppm = int(self.ppm.GetValue())
 		except:
-			wx.MessageBox(_('PPM value must be an entire number.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			wx.MessageBox(_('PPM value must be a whole number.'), _('Error'), wx.OK | wx.ICON_ERROR)
 			return
 		try:
 			self.sdraisport = int(self.port.GetValue())
 		except:
-			wx.MessageBox(_('UDP port value must be an entire number.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			wx.MessageBox(_('UDP port value must be a whole number.'), _('Error'), wx.OK | wx.ICON_ERROR)
 			return
 		self.EndModal(wx.OK)
 
@@ -548,6 +532,79 @@ class editSdrAis(wx.Dialog):
 		self.sdraisppm = ''
 		self.sdraisport = ''
 		self.EndModal(wx.OK)
+
+################################################################################
+
+class editSerial(wx.Dialog):
+	def __init__(self):
+		self.currentdir = os.path.dirname(os.path.abspath(__file__))
+		self.platform = platform.Platform()
+
+		wx.Dialog.__init__(self, None, title=_('Editing devices serial number'), size=(400,300))
+		panel = wx.Panel(self)
+
+		detectedLabel = wx.StaticText(panel, label =_(' Detected SDR devices '))
+
+		self.listDev = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,200))
+		self.listDev.InsertColumn(0, _('Index'), width=80)
+		self.listDev.InsertColumn(1, _('Serial'), width=300)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListDevSelected)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
+		self.listDev.SetTextColour(wx.BLACK)
+
+		self.serial = wx.TextCtrl(panel)
+		self.serial.SetMaxLength(8)
+		self.setSerial = wx.Button(panel, label=_('Change serial'))
+		self.Bind(wx.EVT_BUTTON, self.onSetSerial, self.setSerial)
+
+		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
+
+		setSerialBox = wx.BoxSizer(wx.HORIZONTAL)
+		setSerialBox.Add(self.setSerial, 0, wx.ALL | wx.EXPAND, 0)
+		setSerialBox.Add(self.serial, 1, wx.LEFT | wx.EXPAND, 5)
+
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		vbox.Add(detectedLabel, 0, wx.ALL | wx.EXPAND, 5)
+		vbox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
+		vbox.Add(setSerialBox, 0, wx.ALL | wx.EXPAND, 5)
+		vbox.AddStretchSpacer(1)
+		vbox.Add(cancelBtn, 0, wx.ALL | wx.EXPAND, 10)
+
+		panel.SetSizer(vbox)
+		self.Centre()
+
+		self.read()
+
+	def read(self):
+		from rtlsdr import RtlSdr
+		self.onListDevDeselected()
+		serial_numbers = RtlSdr.get_device_serial_addresses()
+		for i in serial_numbers:
+			device_index = RtlSdr.get_device_index_by_serial(i)
+			item = self.listDev.InsertItem(0, str(device_index))
+			self.listDev.SetItem(item, 1, str(i))
+
+	def onListDevSelected(self,e=0):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.serial.SetValue(self.listDev.GetItemText(i, 1))
+		self.serial.Enable()
+		self.setSerial.Enable()
+
+	def onListDevDeselected(self,e=0):
+		self.serial.Disable()
+		self.setSerial.Disable()
+
+	def onSetSerial(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		dlg = wx.MessageDialog(None, _('All programs and processes that use SDR devices will stop and you will need to manually restart them after changing the device serial number.\n\nAre you sure?'),
+			_('Question'), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION)
+		if dlg.ShowModal() == wx.ID_YES:
+			subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+			subprocess.Popen(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/rtl_eeprom.sh', self.listDev.GetItemText(i, 0), self.serial.GetValue(), _('Please replug the device for changes to take effect. Press Enter to close this window.')])
+			self.EndModal(wx.OK)
+		dlg.Destroy()
 
 ################################################################################
 
