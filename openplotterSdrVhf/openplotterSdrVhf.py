@@ -86,6 +86,17 @@ class MyFrame(wx.Frame):
 		self.appsDict = []
 
 		app = {
+		'name': 'ADS-B',
+		'included': False,
+		'show': 'http://localhost/dump1090-fa/',
+		'service': ['dump1090-fa','piaware'],
+		'edit': True,
+		'install': self.platform.admin+' python3 '+self.currentdir+'/installPiaware.py',
+		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPiaware.py',
+		}
+		self.appsDict.append(app)
+
+		app = {
 		'name': 'GQRX',
 		'included': False,
 		'show': 'gqrx',
@@ -100,7 +111,7 @@ class MyFrame(wx.Frame):
 		'name': 'AIS',
 		'included': True,
 		'show': '',
-		'service': 'openplotter-rtl_ais',
+		'service': ['openplotter-rtl_ais'],
 		'edit': True,
 		'install': '',
 		'uninstall': '',
@@ -240,17 +251,25 @@ class MyFrame(wx.Frame):
 								if device == str(RtlSdr.get_device_index_by_serial(ii)):
 									self.listApps.SetItem(item, 3, ii)
 					except Exception as e: print('error getting gqrx settings: '+str(e))
+			elif i['name'] == 'ADS-B':
+				if not self.platform.isInstalled('piaware'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+
 		listCount = range(self.listApps.GetItemCount())
 		for i in listCount:
 			index = self.listApps.GetItemText(i, 2)
-			for ii in listCount:
-				if self.listApps.GetItemText(ii, 2) == index and i != ii:
-					if self.listApps.GetItemText(i, 0) == 'AIS' or self.listApps.GetItemText(ii, 0) == 'AIS':
-						command = 'systemctl show openplotter-rtl_ais --no-page'
-						output = subprocess.check_output(command.split(),universal_newlines=True)
-						if 'SubState=running' in output: self.listApps.SetItemBackgroundColour(i,(255,0,0))
-					else:
-						self.listApps.SetItemBackgroundColour(i,(255,0,0))
+			if index:
+				for ii in listCount:
+					if self.listApps.GetItemText(ii, 2) == index and i != ii:
+						if self.listApps.GetItemText(i, 0) == 'AIS' or self.listApps.GetItemText(ii, 0) == 'AIS':
+							command = 'systemctl show openplotter-rtl_ais --no-page'
+							output = subprocess.check_output(command.split(),universal_newlines=True)
+							if 'SubState=running' in output: self.listApps.SetItemBackgroundColour(i,(255,0,0))
+						else:
+							self.listApps.SetItemBackgroundColour(i,(255,0,0))
 		self.onListAppsDeselected()
 		try: self.set_listSystemd()
 		except: pass
@@ -344,7 +363,11 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		apps = list(reversed(self.appsDict))
 		show = apps[index]['show']
-		if show: subprocess.Popen(show)
+		if show:
+			if 'http' in show:
+				webbrowser.open(show, new=2)
+			else:
+				subprocess.Popen((show).split())
 
 ################################################################################
 
@@ -355,9 +378,10 @@ class MyFrame(wx.Frame):
 
 		self.listSystemd = CheckListCtrl(self.systemd, 152)
 		self.listSystemd.InsertColumn(0, _('Autostart'), width=90)
-		self.listSystemd.InsertColumn(1, _('Process'), width=150)
-		self.listSystemd.InsertColumn(2, _('Status'), width=150)
-		self.listSystemd.InsertColumn(3, '  ', width=150)
+		self.listSystemd.InsertColumn(1, _('App'), width=90)
+		self.listSystemd.InsertColumn(2, _('Process'), width=140)
+		self.listSystemd.InsertColumn(3, _('Status'), width=120)
+		self.listSystemd.InsertColumn(4, '  ', width=100)
 		self.listSystemd.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListSystemdSelected)
 		self.listSystemd.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListSystemdDeselected)
 		self.listSystemd.SetTextColour(wx.BLACK)
@@ -398,30 +422,39 @@ class MyFrame(wx.Frame):
 
 	def set_listSystemd(self):
 		self.process = []
-		for i in self.appsDict:
-			if i['service']: self.process.append(i['service'])
+		apps = list(reversed(self.appsDict))
+		for i in apps:
+			if i['service']:
+				for ii in i['service']:
+					if i['name'] == 'ADS-B':
+						if ii == 'piaware':
+							if self.platform.isInstalled('piaware'): self.process.append({'app':i['name'], 'service':ii})
+						if ii == 'dump1090-fa':
+							if self.platform.isInstalled('dump1090-fa'): self.process.append({'app':i['name'], 'service':ii})						
+					else:
+						self.process.append({'app':i['name'], 'service':ii})
 		self.listSystemd.DeleteAllItems()
 		index = 1
 		for i in self.process:
-			if i:
-				index = self.listSystemd.InsertItem(sys.maxsize, '')
-				self.statusUpdate(i,index)
+			index = self.listSystemd.InsertItem(sys.maxsize, '')
+			self.statusUpdate(i['service'],index,i['app'])
 		self.onListSystemdDeselected()
 
-	def statusUpdate(self, process, index): 
+	def statusUpdate(self, process, index, app): 
 		command = 'systemctl show ' + process + ' --no-page'
 		output = subprocess.check_output(command.split(),universal_newlines=True)
 		if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
-		self.listSystemd.SetItem(index, 1, process)
-		self.listSystemd.SetItem(index, 2, self.aStatusList[('ActiveState=active' in output)*1])
-		self.listSystemd.SetItem(index, 3, self.bStatusList[('SubState=running' in output)*1])
+		self.listSystemd.SetItem(index, 1, app)
+		self.listSystemd.SetItem(index, 2, process)
+		self.listSystemd.SetItem(index, 3, self.aStatusList[('ActiveState=active' in output)*1])
+		self.listSystemd.SetItem(index, 4, self.bStatusList[('SubState=running' in output)*1])
 						
 	def onStart(self,e):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Starting process...'))
 		self.onKillProcesses()
-		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]).split())
+		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]['service']).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -430,7 +463,7 @@ class MyFrame(wx.Frame):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Stopping process...'))
-		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]).split())
+		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]['service']).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -440,7 +473,7 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Restarting process...'))
 		self.onKillProcesses()
-		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]).split())
+		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]['service']).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -448,9 +481,9 @@ class MyFrame(wx.Frame):
 	def OnCheckItem(self, index, flag):
 		if not self.started: return
 		if flag:
-			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]).split())
+			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]['service']).split())
 		else:
-			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]).split())
+			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]['service']).split())
 
 	def onKillProcesses(self):
 		subprocess.call(['pkill', '-15', 'rtl_test'])
