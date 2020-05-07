@@ -86,6 +86,28 @@ class MyFrame(wx.Frame):
 		self.appsDict = []
 
 		app = {
+		'name': 'DVB-T',
+		'included': False,
+		'show': 'vlc '+self.conf.home+'/.openplotter/dvb.xspf',
+		'service': '',
+		'edit': True,
+		'install': self.platform.admin+' python3 '+self.currentdir+'/installDvbt.py',
+		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallDvbt.py',
+		}
+		self.appsDict.append(app)
+
+		app = {
+		'name': 'DAB',
+		'included': False,
+		'show': 'welle-io',
+		'service': '',
+		'edit': False,
+		'install': self.platform.admin+' apt install -y welle.io',
+		'uninstall': self.platform.admin+' apt autoremove -y welle.io',
+		}
+		self.appsDict.append(app)
+
+		app = {
 		'name': 'ADS-B',
 		'included': False,
 		'show': 'http://localhost/dump1090-fa/',
@@ -171,8 +193,8 @@ class MyFrame(wx.Frame):
 	def pageSdrApps(self):
 		self.listApps = wx.ListCtrl(self.sdrApps, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,200))
 		self.listApps.InsertColumn(0, _('Name'), width=135)
-		self.listApps.InsertColumn(1, _('Status'), width=135)
-		self.listApps.InsertColumn(2, _('Device index'), width=135)
+		self.listApps.InsertColumn(1, _('Status'), width=150)
+		self.listApps.InsertColumn(2, _('Device index'), width=200)
 		self.listApps.InsertColumn(3, _('Device serial'), width=200)
 		self.listApps.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListAppsSelected)
 		self.listApps.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListAppsDeselected)
@@ -257,7 +279,21 @@ class MyFrame(wx.Frame):
 					self.listApps.SetItemBackgroundColour(item,(200,200,200))
 				else:
 					self.listApps.SetItem(item, 1, _('installed'))
-
+			elif i['name'] == 'DAB':
+				if not self.platform.isInstalled('welle.io'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+					self.listApps.SetItem(item, 2, _('First available'))
+			elif i['name'] == 'DVB-T':
+				if not self.platform.isInstalled('w-scan'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+					self.listApps.SetItem(item, 2, _('First available'))
+		'''
 		listCount = range(self.listApps.GetItemCount())
 		for i in listCount:
 			index = self.listApps.GetItemText(i, 2)
@@ -270,6 +306,7 @@ class MyFrame(wx.Frame):
 							if 'SubState=running' in output: self.listApps.SetItemBackgroundColour(i,(255,0,0))
 						else:
 							self.listApps.SetItemBackgroundColour(i,(255,0,0))
+		'''
 		self.onListAppsDeselected()
 		try: self.set_listSystemd()
 		except: pass
@@ -325,8 +362,9 @@ class MyFrame(wx.Frame):
 		apps = list(reversed(self.appsDict))
 		index = self.listApps.GetItemText(i, 2)
 		serial = self.listApps.GetItemText(i, 3)
+		self.ShowStatusBarYELLOW(_('Stopping all SDR processes'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
-		if apps[i]['service'] == 'openplotter-rtl_ais':
+		if apps[i]['name'] == 'AIS':
 			dlg = editSdrAis(index,serial,self.conf)
 			res = dlg.ShowModal()
 			if res == wx.OK:
@@ -335,8 +373,27 @@ class MyFrame(wx.Frame):
 				self.conf.set('SDR-VHF', 'sdraisport', str(dlg.sdraisport))
 				self.manageSKconnection(dlg.sdraisport)
 			dlg.Destroy()
+		if apps[i]['name'] == 'DVB-T':
+			dlg = editDvbt()
+			res = dlg.ShowModal()
+			if res == wx.ID_OK:
+				command = 'w_scan -ft -c '+dlg.code+' -L > '+self.conf.home+'/.openplotter/dvb.xspf'
+				msg = _('Scanning channels, please wait... ')
+				self.logger.Clear()
+				self.notebook.ChangeSelection(2)
+				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
+				for line in popen.stdout:
+					try:
+						if not 'Warning' in line and not 'WARNING' in line:
+							self.logger.WriteText(line)
+							self.ShowStatusBarYELLOW(msg+line)
+							self.logger.ShowPosition(self.logger.GetLastPosition())
+					except Exception as e: self.logger.WriteText(str(e))
+			dlg.Destroy()
+		self.ShowStatusBarYELLOW(_('Restarting SDR processes ...'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
 		time.sleep(1)
+		self.ShowStatusBarYELLOW(_('Done'))
 		self.OnRefreshButton()
 
 	def manageSKconnection(self,port):
@@ -755,6 +812,44 @@ class editSerial(wx.Dialog):
 			subprocess.Popen(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/rtl_eeprom.sh', self.listDev.GetItemText(i, 0), self.serial.GetValue(), _('Please replug the device for changes to take effect. Press Enter to close this window.')])
 			self.EndModal(wx.OK)
 		dlg.Destroy()
+
+################################################################################
+
+class editDvbt(wx.Dialog):
+	def __init__(self):
+		self.currentdir = os.path.dirname(os.path.abspath(__file__))
+		self.platform = platform.Platform()
+
+		wx.Dialog.__init__(self, None, title=_('Escanning DVB-T channels'), size=(370,120))
+		panel = wx.Panel(self)
+
+		codeLabel = wx.StaticText(panel, label =_('Country code'))
+		self.countryCode = wx.TextCtrl(panel)
+
+		countriesList = wx.Button(panel, label=_('Get list'))
+		self.Bind(wx.EVT_BUTTON, self.onCountriesList, countriesList)
+
+		scan = wx.Button(panel, label=_('Scan'))
+		self.Bind(wx.EVT_BUTTON, self.onScan, scan)
+
+		hbox = wx.BoxSizer(wx.HORIZONTAL)
+		hbox.Add(codeLabel, 1, wx.ALL | wx.EXPAND, 5)
+		hbox.Add(self.countryCode, 1, wx.ALL | wx.EXPAND, 5)
+		hbox.Add(countriesList, 1, wx.ALL | wx.EXPAND, 5)
+
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		vbox.Add(hbox, 0, wx.ALL | wx.EXPAND, 5)
+		vbox.Add(scan, 0, wx.ALL | wx.EXPAND, 5)
+
+		panel.SetSizer(vbox)
+		self.Centre()
+
+	def onScan(self,e):
+		self.code = self.countryCode.GetValue()
+		self.EndModal(wx.ID_OK)
+
+	def onCountriesList(self,e):
+		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/countries.sh'])
 
 ################################################################################
 

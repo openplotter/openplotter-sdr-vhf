@@ -23,6 +23,9 @@ def onKillProcesses():
 	subprocess.call(['pkill', '-15', 'kal'])
 	subprocess.call(['pkill', '-15', 'rtl_eeprom'])
 	subprocess.call(['pkill', '-15', 'gqrx'])
+	subprocess.call(['pkill', '-15', 'welle-io'])
+	subprocess.call(['pkill', '-15', 'w_scan'])
+	subprocess.call(['pkill', '-15', 'vlc'])
 	time.sleep(1)
 
 conf2 = conf.Conf()
