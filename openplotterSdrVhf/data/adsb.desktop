@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=SDR ADS-B
+Exec=x-www-browser http://localhost/dump1090-fa
+Icon=adsb
+StartupNotify=true
+Terminal=false
+Type=Application
+Categories=OpenPlotter

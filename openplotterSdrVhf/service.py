@@ -33,12 +33,23 @@ conf2 = conf.Conf()
 if sys.argv[1]=='stopProcesses':
 	onKillProcesses()
 	subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
+	subprocess.call(['systemctl', 'stop', 'dump1090-fa'])
+	subprocess.call(['systemctl', 'stop', 'piaware'])
 
 if sys.argv[1]=='restartProcesses':
 	onKillProcesses()
-	sdraisdeviceindex = conf2.get('SDR-VHF', 'sdraisdeviceindex')
-	if sdraisdeviceindex: subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
-	else: subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
+	try:
+		subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
+		subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
+	except: pass
+	try:
+		subprocess.check_output(['systemctl', 'is-enabled', 'dump1090-fa']).decode(sys.stdin.encoding)
+		subprocess.call(['systemctl', 'restart', 'dump1090-fa'])
+	except: pass
+	try:
+		subprocess.check_output(['systemctl', 'is-enabled', 'piaware']).decode(sys.stdin.encoding)
+		subprocess.call(['systemctl', 'restart', 'piaware'])
+	except: pass
 	try:
 		subprocess.call(['systemctl', 'stop', 'signalk.service'])
 		subprocess.call(['systemctl', 'stop', 'signalk.socket'])

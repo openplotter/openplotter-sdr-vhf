@@ -49,6 +49,8 @@ def main():
 	try:
 		subprocess.call(('piaware-config allow-auto-updates yes').split())
 		subprocess.call(('piaware-config allow-manual-updates yes').split())
+		subprocess.call(('cp -f '+currentdir+'/data/adsb.png /usr/share/pixmaps/').split())
+		subprocess.call(('cp -f '+currentdir+'/data/adsb.desktop /usr/share/applications/').split())
 		subprocess.call(('ln -s /etc/lighttpd/conf-available/89-dump1090-fa.conf /etc/lighttpd/conf-enabled/89-dump1090-fa.conf').split())
 		subprocess.call(('ln -s /etc/lighttpd/conf-available/88-dump1090-fa-statcache.conf /etc/lighttpd/conf-enabled/88-dump1090-fa-statcache.conf').split())
 		subprocess.call(('service lighttpd restart').split())

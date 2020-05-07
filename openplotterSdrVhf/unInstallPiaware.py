@@ -29,6 +29,8 @@ def main():
 	print(_('Uninstalling piaware and dump1090-fa...'))
 	try:
 		subprocess.call(('apt autoremove -y piaware dump1090-fa').split())
+		subprocess.call(('rm -f /usr/share/pixmaps/adsb.png').split())
+		subprocess.call(('rm -f /usr/share/applications/adsb.desktop').split())
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
