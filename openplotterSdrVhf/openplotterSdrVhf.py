@@ -108,17 +108,6 @@ class MyFrame(wx.Frame):
 		self.appsDict.append(app)
 
 		app = {
-		'name': 'ADS-B',
-		'included': False,
-		'show': 'http://localhost/dump1090-fa/',
-		'service': ['dump1090-fa','piaware'],
-		'edit': True,
-		'install': self.platform.admin+' python3 '+self.currentdir+'/installPiaware.py',
-		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPiaware.py',
-		}
-		self.appsDict.append(app)
-
-		app = {
 		'name': 'GQRX',
 		'included': False,
 		'show': 'gqrx',
@@ -129,6 +118,17 @@ class MyFrame(wx.Frame):
 		}
 		self.appsDict.append(app)
 
+		app = {
+		'name': 'ADS-B',
+		'included': False,
+		'show': 'http://localhost/dump1090-fa/',
+		'service': ['dump1090-fa','piaware'],
+		'edit': True,
+		'install': self.platform.admin+' python3 '+self.currentdir+'/installPiaware.py',
+		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPiaware.py',
+		}
+		self.appsDict.append(app)
+		
 		app = {
 		'name': 'AIS',
 		'included': True,
@@ -180,8 +180,9 @@ class MyFrame(wx.Frame):
 		subprocess.Popen('openplotter-settings')
 
 	def OnCalibrationButton(self,e):
-		self.ShowStatusBarYELLOW(_('Stopping all SDR processes'))
+		self.ShowStatusBarYELLOW(_('Stopping all SDR processes. Please wait...'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+		self.SetStatusText('')
 		dlg = editCalibration(self.conf)
 		res = dlg.ShowModal()
 		if res == wx.OK:
@@ -189,11 +190,11 @@ class MyFrame(wx.Frame):
 			self.Destroy()
 			return
 		dlg.Destroy()
-		self.ShowStatusBarYELLOW(_('Restarting SDR processes ...'))
+		self.ShowStatusBarYELLOW(_('Restarting SDR processes. Please wait...'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
 		time.sleep(1)
-		self.ShowStatusBarGREEN(_('Done'))
 		self.OnRefreshButton()
+		self.ShowStatusBarGREEN(_('Done'))
 
 ################################################################################
 
@@ -261,6 +262,8 @@ class MyFrame(wx.Frame):
 					for ii in serial_numbers:
 						if sdraisdeviceindex == str(RtlSdr.get_device_index_by_serial(ii)):
 							self.listApps.SetItem(item, 3, ii)
+				sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
+				if sdraisppm: self.listApps.SetItem(item, 4, sdraisppm)
 			elif i['name'] == 'GQRX':
 				if not os.path.isdir(self.conf.home+'/.config/gqrx'):
 					self.listApps.SetItem(item, 1, _('not installed'))
@@ -280,6 +283,8 @@ class MyFrame(wx.Frame):
 							for ii in serial_numbers:
 								if device == str(RtlSdr.get_device_index_by_serial(ii)):
 									self.listApps.SetItem(item, 3, ii)
+						gqrxppm = gqrx_conf.get('input', 'corr_freq')
+						if gqrxppm: self.listApps.SetItem(item, 4, str(int(gqrxppm)/1000000))
 					except Exception as e: print('error getting gqrx settings: '+str(e))
 			elif i['name'] == 'ADS-B':
 				if not self.platform.isInstalled('piaware'):
@@ -387,18 +392,15 @@ class MyFrame(wx.Frame):
 		i = self.listApps.GetFirstSelected()
 		if i == -1: return
 		apps = list(reversed(self.appsDict))
-		index = self.listApps.GetItemText(i, 2)
-		serial = self.listApps.GetItemText(i, 3)
-		self.ShowStatusBarYELLOW(_('Stopping all SDR processes'))
+		self.ShowStatusBarYELLOW(_('Stopping all SDR processes. Please wait...'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+		self.SetStatusText('')
+
 		if apps[i]['name'] == 'AIS':
-			dlg = editSdrAis(index,serial,self.conf)
+			dlg = editSdrAis(self.conf)
 			res = dlg.ShowModal()
-			if res == wx.OK:
-				self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(dlg.sdraisdeviceindex))
-				self.conf.set('SDR-VHF', 'sdraisppm', str(dlg.sdraisppm))
-				self.conf.set('SDR-VHF', 'sdraisport', str(dlg.sdraisport))
-				self.manageSKconnection(dlg.sdraisport)
+			if res == wx.ID_OK:
+				self.manageSKconnection(self.conf.get('SDR-VHF', 'sdraisport'))
 			dlg.Destroy()
 
 		if apps[i]['name'] == 'ADS-B':
@@ -423,11 +425,12 @@ class MyFrame(wx.Frame):
 							self.logger.ShowPosition(self.logger.GetLastPosition())
 					except Exception as e: self.logger.WriteText(str(e))
 			dlg.Destroy()
-		self.ShowStatusBarYELLOW(_('Restarting SDR processes ...'))
+
+		self.ShowStatusBarYELLOW(_('Restarting SDR processes. Please wait...'))
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
 		time.sleep(1)
-		self.ShowStatusBarGREEN(_('Done'))
 		self.OnRefreshButton()
+		self.ShowStatusBarGREEN(_('Done'))
 
 	def manageSKconnection(self,port):
 		if self.platform.skDir:
@@ -503,12 +506,10 @@ class MyFrame(wx.Frame):
 		self.toolbar3.EnableTool(302,True)
 		self.toolbar3.EnableTool(303,True)
 
-
 	def onListSystemdDeselected(self, event=0):
 		self.toolbar3.EnableTool(301,False)
 		self.toolbar3.EnableTool(302,False)
 		self.toolbar3.EnableTool(303,False)
-
 
 	def set_listSystemd(self):
 		self.process = []
@@ -583,187 +584,6 @@ class MyFrame(wx.Frame):
 		sizer.Add(self.logger, 1, wx.EXPAND, 0)
 		self.output.SetSizer(sizer)
 
-################################################################################
-'''
-class editSdrAis(wx.Dialog):
-	def __init__(self, deviceIndex, deviceSerial, conf):
-		self.deviceIndex = deviceIndex
-		self.deviceSerial = deviceSerial
-		self.conf = conf
-		self.currentdir = os.path.dirname(os.path.abspath(__file__))
-
-		wx.Dialog.__init__(self, None, title=_('Editing SDR AIS'), size=(500,444))
-		panel = wx.Panel(self)
-
-		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
-		self.listDev = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,100))
-		self.listDev.InsertColumn(0, _('Index'), width=80)
-		self.listDev.InsertColumn(1, _('Serial'), width=145)
-		self.listDev.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListDevSelected)
-		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
-		self.listDev.SetTextColour(wx.BLACK)
-
-		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
-		ppmLabel = wx.StaticText(panel, label='PPM')
-		self.ppm = wx.TextCtrl(panel)
-		portLabel = wx.StaticText(panel, label=_('Output UDP port'))
-		self.port = wx.TextCtrl(panel)
-
-		calibrationLabel = wx.StaticBox(panel, label=_(' Calibration '))
-		self.button_test_gain = wx.Button(panel, label=_('Initial PPM'))
-		self.Bind(wx.EVT_BUTTON, self.onTestDevice, self.button_test_gain)
-
-		bands_label = wx.StaticText(panel, label=_('Band'))
-		self.band = wx.ComboBox(panel, choices = ['GSM850', 'GSM-R', 'GSM900', 'EGSM', 'DCS', 'PCS'], style = wx.CB_READONLY)
-		self.getChannel = wx.Button(panel, label =_('Get channel'))
-		self.Bind(wx.EVT_BUTTON, self.onGetChannel, self.getChannel)
-
-		channel_label = wx.StaticText(panel, label =_('Channel'))
-		self.channel = wx.TextCtrl(panel)
-		self.getPpm = wx.Button(panel, label=_('Get PPM'))
-		self.Bind(wx.EVT_BUTTON, self.onGetPpm, self.getPpm)
-
-		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
-		deleteBtn = wx.Button(panel, label=_('Delete'))
-		deleteBtn.Bind(wx.EVT_BUTTON, self.OnDelete)
-		okBtn = wx.Button(panel, wx.ID_OK)
-		okBtn.Bind(wx.EVT_BUTTON, self.OnOk)
-
-		listDevLabelBox = wx.StaticBoxSizer(listDevLabel, wx.VERTICAL)
-		listDevLabelBox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
-		listDevLabelBox.AddSpacer(5)
-
-		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
-		finalBox.Add(ppmLabel, 0, wx.LEFT | wx.UP, 10)
-		finalBox.Add(self.ppm, 0, wx.LEFT | wx.UP, 10)
-		finalBox.Add(portLabel, 0, wx.LEFT | wx.UP, 10)
-		finalBox.Add(self.port, 0, wx.LEFT | wx.UP, 10)
-
-		firstBox = wx.BoxSizer(wx.HORIZONTAL)
-		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
-		firstBox.Add(finalBox, 1, wx.ALL | wx.EXPAND, 5)
-
-		testBox = wx.BoxSizer(wx.VERTICAL)
-		testBox.Add(self.button_test_gain, 0, wx.ALL | wx.EXPAND, 5)
-		testBox.AddStretchSpacer(1)
-
-		bandBox = wx.BoxSizer(wx.VERTICAL)
-		bandBox.Add(bands_label, 0, wx.ALL | wx.EXPAND, 5)
-		bandBox.Add(self.band, 0, wx.ALL | wx.EXPAND, 5)
-		bandBox.Add(self.getChannel, 0, wx.ALL | wx.EXPAND, 5)
-
-		channelBox = wx.BoxSizer(wx.VERTICAL)
-		channelBox.Add(channel_label, 0, wx.ALL | wx.EXPAND, 5)
-		channelBox.Add(self.channel, 0, wx.ALL | wx.EXPAND, 5)
-		channelBox.Add(self.getPpm, 0, wx.ALL | wx.EXPAND, 5)
-
-		calibrationLabelBox = wx.StaticBoxSizer(calibrationLabel, wx.HORIZONTAL)
-		calibrationLabelBox.Add(testBox, 1, wx.ALL | wx.EXPAND, 10)
-		calibrationLabelBox.Add(bandBox, 1, wx.ALL | wx.EXPAND, 10)
-		calibrationLabelBox.Add(channelBox, 1, wx.ALL | wx.EXPAND, 10)
-
-		hbox = wx.BoxSizer(wx.HORIZONTAL)
-		hbox.Add(cancelBtn, 1, wx.ALL | wx.EXPAND, 5)
-		hbox.Add(deleteBtn, 1, wx.ALL | wx.EXPAND, 5)
-		hbox.Add(okBtn, 1, wx.ALL | wx.EXPAND, 5)
-
-		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(firstBox, 1, wx.ALL | wx.EXPAND, 0)
-		vbox.Add(calibrationLabelBox, 1, wx.ALL | wx.EXPAND, 5)
-		vbox.Add(hbox, 0, wx.EXPAND, 10)
-
-		panel.SetSizer(vbox)
-		self.Centre()
-
-		self.read()
-
-	def read(self):
-		from rtlsdr import RtlSdr
-		self.onListDevDeselected()
-		serial_numbers = RtlSdr.get_device_serial_addresses()
-		for i in serial_numbers:
-			device_index = RtlSdr.get_device_index_by_serial(i)
-			item = self.listDev.InsertItem(0, str(device_index))
-			self.listDev.SetItem(item, 1, str(i))
-		if self.deviceIndex and self.deviceSerial:
-			for i in range(self.listDev.GetItemCount()):
-				if str(self.deviceIndex) == self.listDev.GetItemText(i, 0) and str(self.deviceSerial) == self.listDev.GetItemText(i, 1):
-					self.listDev.Select(i)
-					self.onListDevSelected()
-
-		sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
-		if not sdraisppm: sdraisppm = '0'
-		self.ppm.SetValue(sdraisppm)
-
-		sdraisport = self.conf.get('SDR-VHF', 'sdraisport')
-		if not sdraisport: sdraisport = '10110'
-		self.port.SetValue(sdraisport)
-
-	def onListDevSelected(self,e=0):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.button_test_gain.Enable()
-		self.getChannel.Enable()
-		self.getPpm.Enable()
-		self.band.Enable()
-		self.channel.Enable()
-
-	def onListDevDeselected(self,e=0):
-		self.button_test_gain.Disable()
-		self.getChannel.Disable()
-		self.getPpm.Disable()
-		self.band.Disable()
-		self.channel.Disable()
-
-	def onKillProcesses(self):
-		subprocess.call(['pkill', '-15', 'rtl_test'])
-		subprocess.call(['pkill', '-15', 'kal'])
-		subprocess.call(['pkill', '-15', 'rtl_eeprom'])
-		subprocess.call(['pkill', '-15', 'gqrx'])
-		time.sleep(1)
-
-	def onTestDevice(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator','-e', 'rtl_test', '-d', self.listDev.GetItemText(i, 0), '-p'])
-
-	def onGetChannel(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 's', self.band.GetValue(), self.ppm.GetValue(), _('Take note of the channel with the highest power value and press Enter to close this window.')])
-
-	def onGetPpm(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 'c', self.channel.GetValue(), self.ppm.GetValue(), _('Take note of the final ppm value rounded to the nearest whole number and press Enter to close this window.')])
-
-	def OnOk(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1:
-			wx.MessageBox(_('Please select a device.'), _('Error'), wx.OK | wx.ICON_ERROR)
-			return
-		self.sdraisdeviceindex = self.listDev.GetItemText(i, 0)
-		try:
-			self.sdraisppm = int(self.ppm.GetValue())
-		except:
-			wx.MessageBox(_('PPM value must be a whole number.'), _('Error'), wx.OK | wx.ICON_ERROR)
-			return
-		try:
-			self.sdraisport = int(self.port.GetValue())
-		except:
-			wx.MessageBox(_('UDP port value must be a whole number.'), _('Error'), wx.OK | wx.ICON_ERROR)
-			return
-		self.EndModal(wx.OK)
-
-	def OnDelete(self,e):
-		self.sdraisdeviceindex = ''
-		self.sdraisppm = ''
-		self.sdraisport = ''
-		self.EndModal(wx.OK)
-'''
 ################################################################################
 
 class editCalibration(wx.Dialog):
@@ -972,6 +792,152 @@ class editCalibration(wx.Dialog):
 
 	def OnClose(self,e):
 		self.EndModal(wx.CANCEL)
+
+################################################################################
+
+class editSdrAis(wx.Dialog):
+	def __init__(self, conf):
+		self.conf = conf
+		self.currentdir = os.path.dirname(os.path.abspath(__file__))
+		self.platform = platform.Platform()
+
+		wx.Dialog.__init__(self, None, title=_('AIS settings'), size=(550,280))
+		panel = wx.Panel(self)
+
+		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
+		self.listDev = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,100))
+		self.listDev.InsertColumn(0, _('Index'), width=60)
+		self.listDev.InsertColumn(1, _('Serial'), width=140)
+		self.listDev.InsertColumn(2, 'PPM', width=50)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListDevSelected)
+		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
+		self.listDev.SetTextColour(wx.BLACK)
+
+		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
+		gainLabel = wx.StaticText(panel, label=_('Gain'))
+		self.gain = wx.TextCtrl(panel)
+		self.getGain = wx.Button(panel, label=_('Check'))
+		self.Bind(wx.EVT_BUTTON, self.onGetGain, self.getGain)
+
+		ppmLabel = wx.StaticText(panel, label=_('PPM'))
+		self.ppm = wx.TextCtrl(panel)
+
+		portLabel = wx.StaticText(panel, label=_('Port'))
+		self.port = wx.TextCtrl(panel)
+
+		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
+		self.okBtn = wx.Button(panel, label=_('Save'))
+		self.Bind(wx.EVT_BUTTON, self.onOkBtn, self.okBtn)
+
+		listDevLabelBox = wx.StaticBoxSizer(listDevLabel, wx.VERTICAL)
+		listDevLabelBox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
+		listDevLabelBox.AddSpacer(5)
+
+		gainBox = wx.BoxSizer(wx.HORIZONTAL)
+		gainBox.Add(gainLabel, 0, wx.ALL | wx.EXPAND, 5)
+		gainBox.Add(self.gain, 1, wx.ALL | wx.EXPAND, 5)
+		gainBox.Add(self.getGain, 0, wx.ALL | wx.EXPAND, 5)
+
+		ppmBox = wx.BoxSizer(wx.HORIZONTAL)
+		ppmBox.Add(ppmLabel, 0, wx.ALL | wx.EXPAND, 5)
+		ppmBox.Add(self.ppm, 1, wx.ALL | wx.EXPAND, 5)
+
+		portBox = wx.BoxSizer(wx.HORIZONTAL)
+		portBox.Add(portLabel, 0, wx.ALL | wx.EXPAND, 5)
+		portBox.Add(self.port, 1, wx.ALL | wx.EXPAND, 5)
+
+		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
+		finalBox.Add(gainBox, 0, wx.ALL | wx.EXPAND, 5)
+		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 5)
+		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 5)
+
+		firstBox = wx.BoxSizer(wx.HORIZONTAL)
+		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
+		firstBox.Add(finalBox, 1, wx.ALL | wx.EXPAND, 5)
+
+		buttonsBox = wx.BoxSizer(wx.HORIZONTAL)
+		buttonsBox.Add(cancelBtn, 1, wx.ALL | wx.EXPAND, 5)
+		buttonsBox.Add(self.okBtn, 1, wx.ALL | wx.EXPAND, 5)
+
+		vbox = wx.BoxSizer(wx.VERTICAL)
+		vbox.Add(firstBox, 1, wx.ALL | wx.EXPAND, 0)
+		vbox.Add(buttonsBox, 0, wx.ALL | wx.EXPAND, 5)
+
+		panel.SetSizer(vbox)
+		self.Centre()
+
+		self.read()
+
+	def read(self):
+		from rtlsdr import RtlSdr
+		self.onListDevDeselected()
+		self.listDev.DeleteAllItems()
+		serial_numbers = RtlSdr.get_device_serial_addresses()
+		for i in serial_numbers:
+			device_index = RtlSdr.get_device_index_by_serial(i)
+			item = self.listDev.InsertItem(0, str(device_index))
+			self.listDev.SetItem(item, 1, str(i))
+			try:
+				devicesList = eval(self.conf.get('SDR-VHF', 'deviceslist'))
+			except: devicesList = []
+			for ii in devicesList:
+				if ii['serial'] == i: self.listDev.SetItem(item, 2, str(ii['ppm']))
+		device = self.conf.get('SDR-VHF', 'sdraisdeviceindex')
+		ppm = self.conf.get('SDR-VHF', 'sdraisppm')
+		gain = self.conf.get('SDR-VHF', 'sdraisgain')
+		port = self.conf.get('SDR-VHF', 'sdraisport')
+		if ppm: self.ppm.SetValue(ppm)
+		if gain: self.gain.SetValue(gain)
+		if port: self.port.SetValue(port)
+		if device:
+			listCount = range(self.listDev.GetItemCount())
+			for i in listCount:
+				if device == self.listDev.GetItemText(i, 0):
+					self.listDev.Select(i)
+					self.onListDevSelected()
+					break
+
+	def onListDevSelected(self,e=0):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		self.ppm.Enable()
+		self.gain.Enable()
+		self.getGain.Enable()
+		self.port.Enable()
+		self.okBtn.Enable()
+
+	def onListDevDeselected(self,e=0):
+		self.ppm.Disable()
+		self.gain.Disable()
+		self.getGain.Disable()
+		self.port.Disable()
+		self.okBtn.Disable()
+
+	def onGetGain(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		subprocess.call(['pkill', '-15', 'rtl_test'])
+		subprocess.call(['x-terminal-emulator','-e', 'rtl_test', '-d', self.listDev.GetItemText(i, 0)])
+
+	def onOkBtn(self,e):
+		i = self.listDev.GetFirstSelected()
+		if i == -1: return
+		index = self.listDev.GetItemText(i, 0)
+		gain = self.gain.GetValue()
+		ppm = self.ppm.GetValue()
+		port = self.port.GetValue()
+		try:
+			float(gain)
+			ppm = round(float(ppm))
+			float(port)
+		except Exception as e: 
+			print(str(e))
+			wx.MessageBox(_('Gain, PPM and Port should be numbers.'), _('Error'), wx.OK | wx.ICON_ERROR)
+		self.conf.set('SDR-VHF', 'sdraisdeviceindex', index)
+		self.conf.set('SDR-VHF', 'sdraisppm', str(ppm))
+		self.conf.set('SDR-VHF', 'sdraisgain', gain)
+		self.conf.set('SDR-VHF', 'sdraisport', port)
+		self.EndModal(wx.ID_OK)
 
 ################################################################################
 

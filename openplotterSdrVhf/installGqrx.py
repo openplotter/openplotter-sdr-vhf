@@ -43,6 +43,7 @@ def main():
 		if not os.path.isfile(file):	
 			subprocess.call((' cp ' + currentdir + '/data/default.conf ' + conf2.home + '/.config/gqrx/').split())
 		subprocess.call(['chown', '-R', conf2.user, conf2.home+'/.config/gqrx'])
+		subprocess.call(('rm -f /usr/share/applications/gnuradio-grc.desktop').split())
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 

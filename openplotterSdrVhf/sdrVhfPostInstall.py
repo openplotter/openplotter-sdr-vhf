@@ -49,7 +49,7 @@ def main():
 		'Type=simple\n'+
 		'User=root\n'+
 		'EnvironmentFile='+conf2.home+'/.openplotter/openplotter.conf\n'+
-		'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'+
+		'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'+
 		'Restart=always\n'+
 		'RestartSec=30\n'+
 		'KillMode=process\n\n'+

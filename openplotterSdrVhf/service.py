@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
-import sys, subprocess, time, os
+import sys, subprocess, os
 from openplotterSettings import conf
 
 def onKillProcesses():
@@ -26,7 +26,6 @@ def onKillProcesses():
 	subprocess.call(['pkill', '-15', 'welle-io'])
 	subprocess.call(['pkill', '-15', 'w_scan'])
 	subprocess.call(['pkill', '-15', 'vlc'])
-	time.sleep(1)
 
 conf2 = conf.Conf()
 
