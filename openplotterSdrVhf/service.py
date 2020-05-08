@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
-import sys, subprocess, time
+import sys, subprocess, time, os
 from openplotterSettings import conf
 
 def onKillProcesses():
@@ -56,3 +56,42 @@ if sys.argv[1]=='restartProcesses':
 		subprocess.call(['systemctl', 'start', 'signalk.socket'])
 		subprocess.call(['systemctl', 'start', 'signalk.service'])
 	except: pass
+	subprocess.call(['service', 'lighttpd', 'restart'])
+
+if sys.argv[1]=='editAdsb':
+	index = sys.argv[2]
+	gain = sys.argv[3]
+	ppm = sys.argv[4]
+	port = sys.argv[5]
+	settings = 'RECEIVER_OPTIONS="--device-index '+index+' --gain '+gain+' --ppm '+ppm+'"'
+	settingsPort = '$SERVER["socket"] == ":'+port+'" {'
+
+	file = open('/etc/default/dump1090-fa', 'r')
+	file1 = open('dump1090-fa', 'w')
+	while True:
+		line = file.readline()
+		if not line: break
+		if 'RECEIVER_OPTIONS' in line: 
+			file1.write(settings+'\n')
+		else: file1.write(line)
+	file.close()
+	file1.close()
+
+	file = open('/etc/lighttpd/conf-available/89-dump1090-fa.conf', 'r')
+	file1 = open('89-dump1090-fa.conf', 'w')
+	while True:
+		line = file.readline()
+		if not line: break
+		if '$SERVER["socket"]' in line: 
+			file1.write(settingsPort+'\n')
+		else: file1.write(line)
+	file.close()
+	file1.close()
+
+	if os.system('diff dump1090-fa /etc/default/dump1090-fa > /dev/null'):
+		os.system('mv dump1090-fa /etc/default')
+	else: os.system('rm -f dump1090-fa')
+
+	if os.system('diff 89-dump1090-fa.conf /etc/lighttpd/conf-available/89-dump1090-fa.conf > /dev/null'):
+		os.system('mv 89-dump1090-fa.conf /etc/lighttpd/conf-available')
+	else: os.system('rm -f 89-dump1090-fa.conf')
