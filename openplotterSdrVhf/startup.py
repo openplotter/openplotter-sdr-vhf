@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
 
-import os, sys
+import os, sys, subprocess
 from openplotterSettings import language
 
 class Start(): 
@@ -40,12 +40,44 @@ class Check():
 		currentdir = os.path.dirname(os.path.abspath(__file__))
 		language.Language(currentdir,'openplotter-sdr-vhf',currentLanguage)
 		
-		self.initialMessage = ''
+		self.initialMessage = _('Checking SDR processes conflicts...')
 
 	def check(self):
 		green = ''
 		black = ''
 		red = ''
 
-		return {'green': green,'black': black,'red': red}
+		worksAis = False
+		worksAdsb = False
+		indexAdsb = ''
+		indexAis = self.conf.get('SDR-VHF', 'sdraisdeviceindex')
+		try:
+			with open('/etc/default/dump1090-fa', 'r') as f:
+				for line in f:
+					if 'RECEIVER_OPTIONS=' in line:
+						line = line.replace('\n', '')
+						line = line.strip()
+						items = line.split('=')
+						item1 = items[1].replace('"', '')
+						item1 = item1.strip()
+						options = item1.split(' ')
+						#--device-index 1 --gain -10 --ppm 0
+						indexAdsb = options[1]
+		except Exception as e: print(str(e))
+		if indexAis == indexAdsb:
+			try:
+				subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
+				worksAis = True
+			except: worksAis = False
+			try:
+				subprocess.check_output(['systemctl', 'is-enabled', 'dump1090-fa']).decode(sys.stdin.encoding)
+				worksAdsb = True
+			except: worksAdsb = False
+			if worksAis and worksAdsb:
+				red = _('AIS and ADS-B processes are trying to read the same SDR device.')
+			else:
+				green = _('no conflicts')
+		else:
+			green = _('no conflicts')
 
+		return {'green': green,'black': black,'red': red}

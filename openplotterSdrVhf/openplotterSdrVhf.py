@@ -66,7 +66,7 @@ class MyFrame(wx.Frame):
 		self.sdrApps = wx.Panel(self.notebook)
 		self.systemd = wx.Panel(self.notebook)
 		self.output = wx.Panel(self.notebook)
-		self.notebook.AddPage(self.sdrApps, _('SDR apps'))
+		self.notebook.AddPage(self.sdrApps, _('SDR tools'))
 		self.notebook.AddPage(self.systemd, _('Processes'))
 		self.notebook.AddPage(self.output, '')
 		self.il = wx.ImageList(24, 24)
@@ -325,23 +325,25 @@ class MyFrame(wx.Frame):
 				else:
 					self.listApps.SetItem(item, 1, _('installed'))
 					self.listApps.SetItem(item, 2, _('First available'))
-		'''
-		listCount = range(self.listApps.GetItemCount())
-		for i in listCount:
-			index = self.listApps.GetItemText(i, 2)
-			if index:
-				for ii in listCount:
-					if self.listApps.GetItemText(ii, 2) == index and i != ii:
-						if self.listApps.GetItemText(i, 0) == 'AIS' or self.listApps.GetItemText(ii, 0) == 'AIS':
-							command = 'systemctl show openplotter-rtl_ais --no-page'
-							output = subprocess.check_output(command.split(),universal_newlines=True)
-							if 'SubState=running' in output: self.listApps.SetItemBackgroundColour(i,(255,0,0))
-						else:
-							self.listApps.SetItemBackgroundColour(i,(255,0,0))
-		'''
+		
 		self.onListAppsDeselected()
-		try: self.set_listSystemd()
+		try: self.statusUpdate()
 		except: pass
+		
+		indexAis = self.listApps.GetItemText(0, 2)
+		indexAdsb = self.listApps.GetItemText(1, 2)
+		if indexAis == indexAdsb:
+			try:
+				subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
+				worksAis = True
+			except: worksAis = False
+			try:
+				subprocess.check_output(['systemctl', 'is-enabled', 'dump1090-fa']).decode(sys.stdin.encoding)
+				worksAdsb = True
+			except: worksAdsb = False
+			if worksAis and worksAdsb:
+				self.listApps.SetItemBackgroundColour(0,(255,0,0))
+				self.listApps.SetItemBackgroundColour(1,(255,0,0))
 
 	def OnToolInstall(self, e):
 		index = self.listApps.GetFirstSelected()
@@ -512,39 +514,39 @@ class MyFrame(wx.Frame):
 		self.toolbar3.EnableTool(303,False)
 
 	def set_listSystemd(self):
-		self.process = []
 		apps = list(reversed(self.appsDict))
 		for i in apps:
 			if i['service']:
 				for ii in i['service']:
-					if i['name'] == 'ADS-B':
-						if ii == 'piaware':
-							if self.platform.isInstalled('piaware'): self.process.append({'app':i['name'], 'service':ii})
-						if ii == 'dump1090-fa':
-							if self.platform.isInstalled('dump1090-fa'): self.process.append({'app':i['name'], 'service':ii})						
-					else:
-						self.process.append({'app':i['name'], 'service':ii})
-		self.listSystemd.DeleteAllItems()
-		index = 1
-		for i in self.process:
-			index = self.listSystemd.InsertItem(sys.maxsize, '')
-			self.statusUpdate(i['service'],index,i['app'])
-		self.onListSystemdDeselected()
+					index = self.listSystemd.InsertItem(sys.maxsize, '')
+					self.listSystemd.SetItem(index, 1, i['name'])
+					self.listSystemd.SetItem(index, 2, ii)
+					command = 'systemctl show '+ii+' --no-page'
+					output = subprocess.check_output(command.split(),universal_newlines=True)
+					if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
+		self.statusUpdate()
 
-	def statusUpdate(self, process, index, app): 
-		command = 'systemctl show ' + process + ' --no-page'
-		output = subprocess.check_output(command.split(),universal_newlines=True)
-		if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
-		self.listSystemd.SetItem(index, 1, app)
-		self.listSystemd.SetItem(index, 2, process)
-		self.listSystemd.SetItem(index, 3, self.aStatusList[('ActiveState=active' in output)*1])
-		self.listSystemd.SetItem(index, 4, self.bStatusList[('SubState=running' in output)*1])
+	def statusUpdate(self):
+		listCount = range(self.listSystemd.GetItemCount())
+		for i in listCount:
+			service = self.listSystemd.GetItemText(i, 2)
+			command = 'systemctl show '+service+' --no-page'
+			output = subprocess.check_output(command.split(),universal_newlines=True)
+			if 'ActiveState=active' in output: self.listSystemd.SetItem(i, 3, _('active'))
+			else: self.listSystemd.SetItem(i, 3, _('inactive'))
+			if 'SubState=running' in output: 
+				self.listSystemd.SetItem(i, 4, _('running'))
+				self.listSystemd.SetItemBackgroundColour(i,(0,255,0))
+			else: 
+				self.listSystemd.SetItem(i, 4, _('dead'))
+				self.listSystemd.SetItemBackgroundColour(i,(-1,-1,-1))
+
 						
 	def onStart(self,e):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Starting process...'))
-		subprocess.call((self.platform.admin + ' systemctl start ' + self.process[index]['service']).split())
+		subprocess.call((self.platform.admin + ' systemctl start ' + self.listSystemd.GetItemText(index, 2)).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -553,7 +555,7 @@ class MyFrame(wx.Frame):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Stopping process...'))
-		subprocess.call((self.platform.admin + ' systemctl stop ' + self.process[index]['service']).split())
+		subprocess.call((self.platform.admin + ' systemctl stop ' + self.listSystemd.GetItemText(index, 2)).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -562,17 +564,20 @@ class MyFrame(wx.Frame):
 		index = self.listSystemd.GetFirstSelected()
 		if index == -1: return
 		self.ShowStatusBarYELLOW(_('Restarting process...'))
-		subprocess.call((self.platform.admin + ' systemctl restart ' + self.process[index]['service']).split())
+		subprocess.call((self.platform.admin + ' systemctl restart ' + self.listSystemd.GetItemText(index, 2)).split())
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
 		
 	def OnCheckItem(self, index, flag):
 		if not self.started: return
+		self.ShowStatusBarYELLOW(_('Enabling/Disabling process...'))
 		if flag:
-			subprocess.call((self.platform.admin + ' systemctl enable ' + self.process[index]['service']).split())
+			subprocess.call((self.platform.admin + ' systemctl enable ' + self.listSystemd.GetItemText(index, 2)).split())
 		else:
-			subprocess.call((self.platform.admin + ' systemctl disable ' + self.process[index]['service']).split())
+			subprocess.call((self.platform.admin + ' systemctl disable ' + self.listSystemd.GetItemText(index, 2)).split())
+		self.OnRefreshButton()
+		self.ShowStatusBarGREEN(_('Done'))
 
 ################################################################################
 
@@ -1076,12 +1081,14 @@ class editAdsb(wx.Dialog):
 		self.gain.Enable()
 		self.getGain.Enable()
 		self.okBtn.Enable()
+		self.port.Enable()
 
 	def onListDevDeselected(self,e=0):
 		self.ppm.Disable()
 		self.gain.Disable()
 		self.getGain.Disable()
 		self.okBtn.Disable()
+		self.port.Disable()
 
 	def onGetGain(self,e):
 		i = self.listDev.GetFirstSelected()
