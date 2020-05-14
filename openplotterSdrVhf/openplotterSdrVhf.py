@@ -754,14 +754,41 @@ class editCalibration(wx.Dialog):
 	def onGetChannel(self,e):
 		i = self.listDev.GetFirstSelected()
 		if i == -1: return
-		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 's', self.band.GetValue(), self.ppm.GetValue(), _('Take note of the channel with the highest power value and press Enter to close this window.'), self.gain.GetValue()])
+		index = self.listDev.GetItemText(i, 0)
+		gain = self.gain.GetValue()
+		ppm = self.ppm.GetValue()
+		band = self.band.GetValue()
+		if band:
+			try:
+				float(gain)
+				ppm = round(float(ppm))
+				self.ppm.SetValue(str(ppm))
+			except Exception as e: 
+				print(str(e))
+				wx.MessageBox(_('Gain and PPM should be numbers.'), _('Error'), wx.OK | wx.ICON_ERROR)
+				return
+			self.onKillProcesses()
+			subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', index, 's', band, str(ppm), _('Take note of the channel with the highest power value and press Enter to close this window.'), str(gain)])
 
 	def onGetPpm(self,e):
 		i = self.listDev.GetFirstSelected()
 		if i == -1: return
-		self.onKillProcesses()
-		subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', self.listDev.GetItemText(i, 0), 'c', self.channel.GetValue(), self.ppm.GetValue(), _('Take note of the final ppm value rounded to the nearest whole number and press Enter to close this window.'),  self.gain.GetValue()])
+		index = self.listDev.GetItemText(i, 0)
+		gain = self.gain.GetValue()
+		ppm = self.ppm.GetValue()
+		channel = self.channel.GetValue()
+		if channel:
+			try:
+				float(gain)
+				ppm = str(round(float(ppm)))
+				self.ppm.SetValue(ppm)
+				float(channel)
+			except Exception as e: 
+				print(str(e))
+				wx.MessageBox(_('Gain, PPM and channel should be numbers.'), _('Error'), wx.OK | wx.ICON_ERROR)
+				return
+			self.onKillProcesses()
+			subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/kal.sh', index, 'c', channel, ppm, _('Take note of the final ppm value rounded to the nearest whole number and press Enter to close this window.'), str(gain)])
 
 	def onSetSerial(self,e):
 		i = self.listDev.GetFirstSelected()
@@ -781,6 +808,13 @@ class editCalibration(wx.Dialog):
 		serial = self.listDev.GetItemText(i, 1)
 		ppm = self.ppm.GetValue()
 		if not ppm: return
+		try:
+			ppm = str(round(float(ppm)))
+			self.ppm.SetValue(ppm)
+		except Exception as e: 
+			print(str(e))
+			wx.MessageBox(_('PPM should be a number.'), _('Error'), wx.OK | wx.ICON_ERROR)
+			return
 		try:
 			devicesList = eval(self.conf.get('SDR-VHF', 'deviceslist'))
 		except: devicesList = []
