@@ -806,7 +806,7 @@ class editSdrAis(wx.Dialog):
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 		self.platform = platform.Platform()
 
-		wx.Dialog.__init__(self, None, title=_('AIS settings'), size=(550,280))
+		wx.Dialog.__init__(self, None, title=_('AIS settings'), size=(550,300))
 		panel = wx.Panel(self)
 
 		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
@@ -823,6 +823,7 @@ class editSdrAis(wx.Dialog):
 		self.gain = wx.TextCtrl(panel)
 		self.getGain = wx.Button(panel, label=_('Check'))
 		self.Bind(wx.EVT_BUTTON, self.onGetGain, self.getGain)
+		autoLabel = wx.StaticText(panel, label=_('leave blank for auto'))
 
 		ppmLabel = wx.StaticText(panel, label=_('PPM'))
 		self.ppm = wx.TextCtrl(panel)
@@ -852,7 +853,10 @@ class editSdrAis(wx.Dialog):
 		portBox.Add(self.port, 1, wx.ALL | wx.EXPAND, 5)
 
 		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
-		finalBox.Add(gainBox, 0, wx.ALL | wx.EXPAND, 5)
+		finalBox.AddSpacer(5)
+		finalBox.Add(gainBox, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 5)
+		finalBox.Add(autoLabel, 0, wx.LEFT | wx.EXPAND, 10)
+		finalBox.AddSpacer(5)
 		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 5)
 		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 5)
 
@@ -894,6 +898,7 @@ class editSdrAis(wx.Dialog):
 		if ppm: self.ppm.SetValue(ppm)
 		if gain: self.gain.SetValue(gain)
 		if port: self.port.SetValue(port)
+		else: self.port.SetValue('10110')
 		if device:
 			listCount = range(self.listDev.GetItemCount())
 			for i in listCount:
@@ -932,16 +937,22 @@ class editSdrAis(wx.Dialog):
 		ppm = self.ppm.GetValue()
 		port = self.port.GetValue()
 		try:
-			float(gain)
+			if gain: float(gain)
+			else: gain = 'auto'
 			ppm = round(float(ppm))
 			float(port)
 		except Exception as e: 
 			print(str(e))
 			wx.MessageBox(_('Gain, PPM and Port should be numbers.'), _('Error'), wx.OK | wx.ICON_ERROR)
-		self.conf.set('SDR-VHF', 'sdraisdeviceindex', index)
+			return
+		self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(index))
 		self.conf.set('SDR-VHF', 'sdraisppm', str(ppm))
-		self.conf.set('SDR-VHF', 'sdraisgain', gain)
-		self.conf.set('SDR-VHF', 'sdraisport', port)
+		if gain == 'auto':
+			self.conf.set('SDR-VHF', 'sdraisgain', '')
+		else:
+			self.conf.set('SDR-VHF', 'sdraisgain', str(gain))
+		self.conf.set('SDR-VHF', 'sdraisport', str(port))
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', self.conf.home, str(gain)])
 		self.EndModal(wx.ID_OK)
 
 ################################################################################

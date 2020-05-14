@@ -94,3 +94,33 @@ if sys.argv[1]=='editAdsb':
 	if os.system('diff 89-dump1090-fa.conf /etc/lighttpd/conf-available/89-dump1090-fa.conf > /dev/null'):
 		os.system('mv 89-dump1090-fa.conf /etc/lighttpd/conf-available')
 	else: os.system('rm -f 89-dump1090-fa.conf')
+
+if sys.argv[1]=='editSdrAis':
+	home = sys.argv[2]
+	gain = sys.argv[3]
+	if gain == 'auto': 
+		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'
+	else: 
+		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'
+	try:
+		fo = open('/etc/systemd/system/openplotter-rtl_ais.service', "w")
+		fo.write(
+		'[Unit]\n'+
+		'Description = Decode AIS received by rtl-sdr and send as NMEA 0183 to UDP port\n'+
+		'After=syslog.target network.target audit.service\n'+
+		'StartLimitInterval=200\n'+
+		'StartLimitBurst=5\n'+
+		'[Service]\n'+
+		'Type=simple\n'+
+		'User=root\n'+
+		'EnvironmentFile='+home+'/.openplotter/openplotter.conf\n'+
+		execStart+
+		'Restart=always\n'+
+		'RestartSec=30\n'+
+		'KillMode=process\n\n'+
+		'[Install]\n'+
+		'WantedBy=multi-user.target\n'
+		)
+		fo.close()
+		subprocess.call((' systemctl daemon-reload').split())
+	except Exception as e: print(str(e))

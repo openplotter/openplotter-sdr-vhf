@@ -36,31 +36,6 @@ def main():
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
-	print(_('Adding rtl_ais service...'))
-	try:
-		fo = open('/etc/systemd/system/openplotter-rtl_ais.service', "w")
-		fo.write(
-		'[Unit]\n'+
-		'Description = Decode AIS received by rtl-sdr and send as NMEA 0183 to UDP port\n'+
-		'After=syslog.target network.target audit.service\n'+
-		'StartLimitInterval=200\n'+
-		'StartLimitBurst=5\n'+
-		'[Service]\n'+
-		'Type=simple\n'+
-		'User=root\n'+
-		'EnvironmentFile='+conf2.home+'/.openplotter/openplotter.conf\n'+
-		'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'+
-		'Restart=always\n'+
-		'RestartSec=30\n'+
-		'KillMode=process\n\n'+
-		'[Install]\n'+
-		'WantedBy=multi-user.target\n'
-		)
-		fo.close()
-		subprocess.call((' systemctl daemon-reload').split())
-		print(_('DONE'))
-	except Exception as e: print(_('FAILED: ')+str(e))
-
 	print(_('Copying udev rules...'))
 	try:
 		subprocess.call(['cp', '-f', currentdir+'/data/rtl-sdr.rules', '/etc/udev/rules.d/'])
