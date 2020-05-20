@@ -140,6 +140,7 @@ class MyFrame(wx.Frame):
 		}
 		self.appsDict.append(app)
 
+		self.started = False
 		self.pageSdrApps()
 		self.pageSystemd()
 		self.pageOutput()
@@ -327,9 +328,10 @@ class MyFrame(wx.Frame):
 					self.listApps.SetItem(item, 2, _('First available'))
 		
 		self.onListAppsDeselected()
-		self.started = False
-		self.statusUpdate()
-		self.started = True
+		if self.started:
+			self.started = False
+			self.statusUpdate()
+			self.started = True
 		
 		indexAis = self.listApps.GetItemText(0, 2)
 		indexAdsb = self.listApps.GetItemText(1, 2)
