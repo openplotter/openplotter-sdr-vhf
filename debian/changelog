@@ -1,3 +1,10 @@
+openplotter-sdr-vhf (2.1.1-beta) bionic; urgency=medium
+
+  * Fix errors
+  * Stable release candidate
+
+ -- Sailoog <info@sailoog.com>  Wed, 20 May 2020 20:34:14 +0200
+
 openplotter-sdr-vhf (2.1.0-beta) bionic; urgency=medium
 
   * Add GQRX, ADS-B, DAB, BVB-T
