@@ -327,8 +327,9 @@ class MyFrame(wx.Frame):
 					self.listApps.SetItem(item, 2, _('First available'))
 		
 		self.onListAppsDeselected()
-		try: self.statusUpdate()
-		except: pass
+		self.started = False
+		self.statusUpdate()
+		self.started = True
 		
 		indexAis = self.listApps.GetItemText(0, 2)
 		indexAdsb = self.listApps.GetItemText(1, 2)
