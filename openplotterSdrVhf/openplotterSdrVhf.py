@@ -86,6 +86,17 @@ class MyFrame(wx.Frame):
 		self.appsDict = []
 
 		app = {
+		'name': 'Pulseaudio mixer',
+		'included': False,
+		'show': 'pavucontrol',
+		'service': '',
+		'edit': False,
+		'install': self.platform.admin+' python3 '+self.currentdir+'/installPavucontrol.py',
+		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPavucontrol.py',
+		}
+		self.appsDict.append(app)
+
+		app = {
 		'name': 'DVB-T',
 		'included': False,
 		'show': 'vlc '+self.conf.home+'/.openplotter/dvb.xspf',
@@ -334,6 +345,12 @@ class MyFrame(wx.Frame):
 				else:
 					self.listApps.SetItem(item, 1, _('installed'))
 					self.listApps.SetItem(item, 2, _('First available'))
+			elif i['name'] == 'Pulseaudio mixer':
+				if not self.platform.isInstalled('pavucontrol'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
 		
 		self.onListAppsDeselected()
 		if self.started:
