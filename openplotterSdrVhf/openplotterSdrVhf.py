@@ -236,8 +236,13 @@ class MyFrame(wx.Frame):
 		self.onListAppsDeselected()
 		apps = list(reversed(self.appsDict))
 		if not apps[i]['included']:
-			self.toolbar2.EnableTool(203,True)
-			self.toolbar2.EnableTool(205,True)
+			if  _('installed') == self.listApps.GetItemText(i, 1):
+				self.toolbar2.EnableTool(203,False)
+				self.toolbar2.EnableTool(205,True)
+			else:
+				self.toolbar2.EnableTool(203,True)
+				self.toolbar2.EnableTool(205,False)
+
 		if self.listApps.GetItemBackgroundColour(i) != (200,200,200):
 			if apps[i]['edit']:
 				self.toolbar2.EnableTool(201,True)
@@ -284,7 +289,10 @@ class MyFrame(wx.Frame):
 							for ii in serial_numbers:
 								if device == str(RtlSdr.get_device_index_by_serial(ii)):
 									self.listApps.SetItem(item, 3, ii)
-						gqrxppm = gqrx_conf.get('input', 'corr_freq')
+						gqrxppm = 0
+						if gqrx_conf.has_section('input'):
+							if gqrx_conf.has_option('input','corr_freq'):
+								gqrxppm = gqrx_conf.get('input','corr_freq')
 						if gqrxppm: self.listApps.SetItem(item, 4, str(int(gqrxppm)/1000000))
 					except Exception as e: print('error getting gqrx settings: '+str(e))
 			elif i['name'] == 'ADS-B':
@@ -521,12 +529,13 @@ class MyFrame(wx.Frame):
 		for i in apps:
 			if i['service']:
 				for ii in i['service']:
-					index = self.listSystemd.InsertItem(sys.maxsize, '')
-					self.listSystemd.SetItem(index, 1, i['name'])
-					self.listSystemd.SetItem(index, 2, ii)
 					command = 'systemctl show '+ii+' --no-page'
 					output = subprocess.check_output(command.split(),universal_newlines=True)
-					if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
+					if 'CanStart=yes' in output:
+						index = self.listSystemd.InsertItem(sys.maxsize, '')
+						self.listSystemd.SetItem(index, 1, i['name'])
+						self.listSystemd.SetItem(index, 2, ii)
+						if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
 		self.statusUpdate()
 
 	def statusUpdate(self):
@@ -1216,3 +1225,4 @@ def main():
 
 if __name__ == '__main__':
 	main()
+
