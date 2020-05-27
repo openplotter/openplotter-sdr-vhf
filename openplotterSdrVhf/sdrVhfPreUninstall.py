@@ -45,6 +45,7 @@ def main():
 	subprocess.call(('python3 '+currentdir+'/unInstallGqrx.py').split())
 	subprocess.call(('python3 '+currentdir+'/unInstallDvbt.py').split())
 	subprocess.call(('python3 '+currentdir+'/unInstallPiaware.py').split())
+	subprocess.call(('python3 '+currentdir+'/unInstallPavucontrol.py').split())
 	subprocess.call(('apt autoremove -y welle.io').split())
 
 	print(_('Removing version...'))

@@ -355,6 +355,8 @@ class MyFrame(wx.Frame):
 		self.onListAppsDeselected()
 		if self.started:
 			self.started = False
+			self.listSystemd.DeleteAllItems()
+			self.set_listSystemd()
 			self.statusUpdate()
 			self.started = True
 		
