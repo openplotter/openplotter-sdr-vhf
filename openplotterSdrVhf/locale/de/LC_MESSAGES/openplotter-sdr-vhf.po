@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: openplotter\n"
-"POT-Creation-Date: 2020-04-18 20:49+0200\n"
-"PO-Revision-Date: 2020-04-20 19:15+0200\n"
+"POT-Creation-Date: 2020-05-20 20:29+0200\n"
+"PO-Revision-Date: 2022-07-02 16:55\n"
 "Last-Translator: \n"
 "Language-Team: German\n"
 "Language: de\n"
@@ -13,226 +13,388 @@ msgstr ""
 "X-Poedit-Basepath: ../../..\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Poedit-SourceCharset: UTF-8\n"
+"X-Poedit-SearchPath-0: .\n"
 "X-Crowdin-Project: openplotter\n"
+"X-Crowdin-Project-ID: 289888\n"
 "X-Crowdin-Language: de\n"
 "X-Crowdin-File: openplotter-sdr-vhf.po\n"
-"X-Poedit-SearchPath-0: .\n"
+"X-Crowdin-File-ID: 28\n"
 
-#: openplotterSdrVhf.py:51
+#: installDvbt.py:29
+msgid "Installing w-scan and VLC..."
+msgstr "W-Scan und VLC werden installiert..."
+
+#: installDvbt.py:32 installDvbt.py:40 installGqrx.py:34 installGqrx.py:47
+#: installPiaware.py:39 installPiaware.py:45 installPiaware.py:57
+#: sdrVhfPostInstall.py:36 sdrVhfPostInstall.py:44 sdrVhfPostInstall.py:50
+#: sdrVhfPreUninstall.py:33 sdrVhfPreUninstall.py:42 sdrVhfPreUninstall.py:53
+#: unInstallDvbt.py:33 unInstallGqrx.py:35 unInstallPiaware.py:34
+#: unInstallPiaware.py:41
+msgid "DONE"
+msgstr "FERTIG"
+
+#: installDvbt.py:33 installDvbt.py:41 installGqrx.py:35 installGqrx.py:48
+#: installPiaware.py:40 installPiaware.py:46 installPiaware.py:58
+#: sdrVhfPostInstall.py:37 sdrVhfPostInstall.py:45 sdrVhfPostInstall.py:51
+#: sdrVhfPreUninstall.py:34 sdrVhfPreUninstall.py:43 sdrVhfPreUninstall.py:54
+#: unInstallDvbt.py:34 unInstallGqrx.py:36 unInstallPiaware.py:35
+#: unInstallPiaware.py:42
+msgid "FAILED: "
+msgstr "FEHLGESCHLAGEN: "
+
+#: installDvbt.py:35
+msgid "Configuring VLC..."
+msgstr "VLC wird konfiguriert..."
+
+#: installGqrx.py:29
+msgid "Installing GQRX..."
+msgstr "GQRX wird installiert..."
+
+#: installGqrx.py:37
+msgid "Configuring GQRX..."
+msgstr "GQRX wird konfiguriert..."
+
+#: installPiaware.py:29
+msgid "Checking sources..."
+msgstr "Prüfe Quellen..."
+
+#: installPiaware.py:42
+msgid "Installing piaware and dump1090-fa..."
+msgstr "Installiere piaware und dump1090-fa..."
+
+#: installPiaware.py:48
+msgid "Configuring piaware..."
+msgstr "piaware wird konfiguriert..."
+
+#: openplotterSdrVhf.py:52
 msgid "Help"
 msgstr "Hilfe"
 
-#: openplotterSdrVhf.py:54
+#: openplotterSdrVhf.py:55
 msgid "Settings"
 msgstr "Einstellungen"
 
-#: openplotterSdrVhf.py:57
+#: openplotterSdrVhf.py:58
+msgid "Calibration"
+msgstr "Kalibrierung"
+
+#: openplotterSdrVhf.py:61
 msgid "Refresh"
 msgstr "Aktualisieren"
 
-#: openplotterSdrVhf.py:64
-msgid "SDR apps"
-msgstr "SDR-Apps"
+#: openplotterSdrVhf.py:69
+msgid "SDR tools"
+msgstr "SDR Werkzeuge"
 
-#: openplotterSdrVhf.py:65
+#: openplotterSdrVhf.py:70
 msgid "Processes"
 msgstr "Prozesse"
 
-#: openplotterSdrVhf.py:130
-msgid "Name"
-msgstr "Name"
+#: openplotterSdrVhf.py:184 openplotterSdrVhf.py:400
+msgid "Stopping all SDR processes. Please wait..."
+msgstr "Stoppe alle SDR-Prozesse. Bitte warten..."
 
-#: openplotterSdrVhf.py:131 openplotterSdrVhf.py:253
-msgid "Status"
-msgstr "Status"
+#: openplotterSdrVhf.py:194 openplotterSdrVhf.py:434
+msgid "Restarting SDR processes. Please wait..."
+msgstr "SDR-Prozesse werden neu gestartet. Bitte warten..."
 
-#: openplotterSdrVhf.py:132
-msgid "Device index"
-msgstr "Geräteindex"
-
-#: openplotterSdrVhf.py:133
-msgid "Device serial"
-msgstr "Serielles Gerät"
-
-#: openplotterSdrVhf.py:139
-msgid "Edit"
-msgstr "Bearbeiten"
-
-#: openplotterSdrVhf.py:142
-msgid "Install"
-msgstr "Installieren"
-
-#: openplotterSdrVhf.py:144
-msgid "Uninstall"
-msgstr "Deinstallieren"
-
-#: openplotterSdrVhf.py:178
-msgid "installed"
-msgstr "installiert"
-
-#: openplotterSdrVhf.py:188
-msgid "not installed"
-msgstr "nicht installiert"
-
-#: openplotterSdrVhf.py:247
-msgid "inactive"
-msgstr "inaktiv"
-
-#: openplotterSdrVhf.py:247
-msgid "active"
-msgstr "aktiv"
-
-#: openplotterSdrVhf.py:248
-msgid "dead"
-msgstr "tot"
-
-#: openplotterSdrVhf.py:248
-msgid "running"
-msgstr "läuft"
-
-#: openplotterSdrVhf.py:251
-msgid "Autostart"
-msgstr "Autostart"
-
-#: openplotterSdrVhf.py:252
-msgid "Process"
-msgstr "Prozess"
-
-#: openplotterSdrVhf.py:262
-msgid "Start"
-msgstr "Start"
-
-#: openplotterSdrVhf.py:264
-msgid "Stop"
-msgstr "Stopp"
-
-#: openplotterSdrVhf.py:266
-msgid "Restart"
-msgstr "Neustart"
-
-#: openplotterSdrVhf.py:316
-msgid "Starting process..."
-msgstr "Prozess wird gestartet..."
-
-#: openplotterSdrVhf.py:320 openplotterSdrVhf.py:329 openplotterSdrVhf.py:338
+#: openplotterSdrVhf.py:198 openplotterSdrVhf.py:438 openplotterSdrVhf.py:555
+#: openplotterSdrVhf.py:564 openplotterSdrVhf.py:573 openplotterSdrVhf.py:583
 msgid "Done"
 msgstr "Fertig"
 
-#: openplotterSdrVhf.py:325
+#: openplotterSdrVhf.py:204
+msgid "Name"
+msgstr "Name"
+
+#: openplotterSdrVhf.py:205 openplotterSdrVhf.py:481
+msgid "Status"
+msgstr "Status"
+
+#: openplotterSdrVhf.py:206
+msgid "Device index"
+msgstr "Geräteindex"
+
+#: openplotterSdrVhf.py:207
+msgid "Device serial"
+msgstr "Serielles Gerät"
+
+#: openplotterSdrVhf.py:208 openplotterSdrVhf.py:621 openplotterSdrVhf.py:865
+#: openplotterSdrVhf.py:1021
+msgid "PPM"
+msgstr "PPM"
+
+#: openplotterSdrVhf.py:214
+msgid "Show"
+msgstr "ANZEIGEN"
+
+#: openplotterSdrVhf.py:217
+msgid "Edit"
+msgstr "Bearbeiten"
+
+#: openplotterSdrVhf.py:220
+msgid "Install"
+msgstr "Installieren"
+
+#: openplotterSdrVhf.py:222
+msgid "Uninstall"
+msgstr "Deinstallieren"
+
+#: openplotterSdrVhf.py:259 openplotterSdrVhf.py:273 openplotterSdrVhf.py:295
+#: openplotterSdrVhf.py:320 openplotterSdrVhf.py:327
+msgid "installed"
+msgstr "installiert"
+
+#: openplotterSdrVhf.py:270 openplotterSdrVhf.py:292 openplotterSdrVhf.py:317
+#: openplotterSdrVhf.py:324
+msgid "not installed"
+msgstr "nicht installiert"
+
+#: openplotterSdrVhf.py:321 openplotterSdrVhf.py:328
+msgid "First available"
+msgstr "Erste verfügbare"
+
+#: openplotterSdrVhf.py:358
+msgid "Are you sure you want to install "
+msgstr "Sind Sie sicher, dass Sie installieren möchten "
+
+#: openplotterSdrVhf.py:358 openplotterSdrVhf.py:381
+msgid " and its dependencies?"
+msgstr " und seine Abhängigkeiten?"
+
+#: openplotterSdrVhf.py:359 openplotterSdrVhf.py:382 openplotterSdrVhf.py:802
+msgid "Question"
+msgstr "Frage"
+
+#: openplotterSdrVhf.py:367
+msgid "Installing SDR app, please wait... "
+msgstr "SDR App wird installiert, bitte warten... "
+
+#: openplotterSdrVhf.py:381
+msgid "Are you sure you want to uninstall "
+msgstr "Sind Sie sicher, dass Sie deinstallieren möchten "
+
+#: openplotterSdrVhf.py:390
+msgid "Uninstalling SDR app, please wait... "
+msgstr "Deinstalliere SDR App, bitte warten... "
+
+#: openplotterSdrVhf.py:421
+msgid "Scanning channels, please wait... "
+msgstr "Scanne Kanäle, bitte warten... "
+
+#: openplotterSdrVhf.py:474 openplotterSdrVhf.py:539
+msgid "inactive"
+msgstr "inaktiv"
+
+#: openplotterSdrVhf.py:474 openplotterSdrVhf.py:538
+msgid "active"
+msgstr "aktiv"
+
+#: openplotterSdrVhf.py:475 openplotterSdrVhf.py:544
+msgid "dead"
+msgstr "tot"
+
+#: openplotterSdrVhf.py:475 openplotterSdrVhf.py:541
+msgid "running"
+msgstr "läuft"
+
+#: openplotterSdrVhf.py:478
+msgid "Autostart"
+msgstr "Autostart"
+
+#: openplotterSdrVhf.py:479
+msgid "App"
+msgstr "App"
+
+#: openplotterSdrVhf.py:480
+msgid "Process"
+msgstr "Prozess"
+
+#: openplotterSdrVhf.py:490
+msgid "Start"
+msgstr "Start"
+
+#: openplotterSdrVhf.py:492
+msgid "Stop"
+msgstr "Stopp"
+
+#: openplotterSdrVhf.py:494
+msgid "Restart"
+msgstr "Neustart"
+
+#: openplotterSdrVhf.py:551
+msgid "Starting process..."
+msgstr "Prozess wird gestartet..."
+
+#: openplotterSdrVhf.py:560
 msgid "Stopping process..."
 msgstr "Stoppe Prozess..."
 
-#: openplotterSdrVhf.py:334
+#: openplotterSdrVhf.py:569
 msgid "Restarting process..."
 msgstr "Prozess wird neu gestartet..."
 
-#: openplotterSdrVhf.py:356
-msgid "Editing SDR AIS"
-msgstr "SDR AIS bearbeiten"
+#: openplotterSdrVhf.py:577
+msgid "Enabling/Disabling process..."
+msgstr "Aktiviere/Deaktiviere Prozess..."
 
-#: openplotterSdrVhf.py:359
+#: openplotterSdrVhf.py:602
+msgid "Calibrating devices"
+msgstr "Kalibrieren von Geräten"
+
+#: openplotterSdrVhf.py:605 openplotterSdrVhf.py:849 openplotterSdrVhf.py:1006
 msgid " Detected SDR devices "
 msgstr " Erkannte SDR-Geräte "
 
-#: openplotterSdrVhf.py:361
+#: openplotterSdrVhf.py:607 openplotterSdrVhf.py:851 openplotterSdrVhf.py:1008
 msgid "Index"
 msgstr "Index"
 
-#: openplotterSdrVhf.py:362
+#: openplotterSdrVhf.py:608 openplotterSdrVhf.py:615 openplotterSdrVhf.py:852
+#: openplotterSdrVhf.py:1009
 msgid "Serial"
 msgstr "Seriell"
 
-#: openplotterSdrVhf.py:369
-msgid "Change serial"
-msgstr "seriell ändern"
-
-#: openplotterSdrVhf.py:372
+#: openplotterSdrVhf.py:614 openplotterSdrVhf.py:858 openplotterSdrVhf.py:1015
 msgid " Settings "
 msgstr " Einstellungen "
 
-#: openplotterSdrVhf.py:375
-msgid "Output UDP port"
-msgstr "Ausgabe UDP Port"
+#: openplotterSdrVhf.py:618 openplotterSdrVhf.py:623
+msgid "Change"
+msgstr "Ändern"
 
-#: openplotterSdrVhf.py:378
+#: openplotterSdrVhf.py:626
 msgid " Calibration "
 msgstr " Kalibrierung"
 
-#: openplotterSdrVhf.py:379
+#: openplotterSdrVhf.py:627
 msgid "Initial PPM"
 msgstr "Erste PPM"
 
-#: openplotterSdrVhf.py:382
+#: openplotterSdrVhf.py:629 openplotterSdrVhf.py:859 openplotterSdrVhf.py:1016
+msgid "Gain"
+msgstr "Verstärkung"
+
+#: openplotterSdrVhf.py:632
 msgid "Band"
 msgstr "Band"
 
-#: openplotterSdrVhf.py:384
+#: openplotterSdrVhf.py:634
 msgid "Get channel"
 msgstr "Kanal holen"
 
-#: openplotterSdrVhf.py:387
+#: openplotterSdrVhf.py:637
 msgid "Channel"
 msgstr "Kanal"
 
-#: openplotterSdrVhf.py:389
+#: openplotterSdrVhf.py:639
 msgid "Get PPM"
 msgstr "PPM holen"
 
-#: openplotterSdrVhf.py:393
-msgid "Delete"
-msgstr "löschen"
+#: openplotterSdrVhf.py:642
+msgid "Close"
+msgstr "Schließen"
 
-#: openplotterSdrVhf.py:513
-msgid "Please replug the device for changes to take effect and restart SDR processes manually. Press Enter to close this window."
-msgstr "Bitte stecken Sie das Gerät neu ein, damit die Änderungen wirksam werden, und starten Sie die SDR-Prozesse manuell neu.  Drücken Sie Enter, um dieses Fenster zu schließen."
+#: openplotterSdrVhf.py:771
+msgid "Gain and PPM should be numbers."
+msgstr "Vertärkung und PPM sollten Zahlen sein."
 
-#: openplotterSdrVhf.py:520
-msgid "Take note of the channel with the highest power value and press Enter to close this window."
-msgstr "Notieren Sie sich den Kanal mit dem höchsten Leistungswert und drücken Sie die Eingabetaste, um dieses Fenster zu schließen."
-
-#: openplotterSdrVhf.py:526
-msgid "Take note of the final ppm value rounded to the nearest integer and press Enter to close this window."
-msgstr "Notieren Sie den endgültigen ppm-Wert, gerundet auf die nächste ganze Zahl, und drücken Sie die Eingabetaste, um dieses Fenster zu schließen."
-
-#: openplotterSdrVhf.py:531
-msgid "Please select a device."
-msgstr "Bitte wählen Sie ein Gerät aus."
-
-#: openplotterSdrVhf.py:531 openplotterSdrVhf.py:537 openplotterSdrVhf.py:542
+#: openplotterSdrVhf.py:771 openplotterSdrVhf.py:791 openplotterSdrVhf.py:819
+#: openplotterSdrVhf.py:983 openplotterSdrVhf.py:1160
 msgid "Error"
 msgstr "Fehler"
 
-#: openplotterSdrVhf.py:537
-msgid "PPM value must be an entire number."
-msgstr "Der PPM-Wert muss eine ganze Zahl sein."
+#: openplotterSdrVhf.py:774
+msgid "Take note of the channel with the highest power value and press Enter to close this window."
+msgstr "Notieren Sie sich den Kanal mit dem höchsten Leistungswert und drücken Sie die Eingabetaste, um dieses Fenster zu schließen."
 
-#: openplotterSdrVhf.py:542
-msgid "UDP port value must be an entire number."
-msgstr "UDP Port Wert muss eine ganze Zahl sein."
+#: openplotterSdrVhf.py:791
+msgid "Gain, PPM and channel should be numbers."
+msgstr "Vertärkung, PPM und Kanal sollten Zahlen sein."
 
-#: ports.py:37
+#: openplotterSdrVhf.py:794
+msgid "Take note of the final ppm value rounded to the nearest whole number and press Enter to close this window."
+msgstr "Notieren Sie den endgültigen ppm-Wert, gerundet auf die nächste ganze Zahl, und drücken Sie die Eingabetaste, um dieses Fenster zu schließen."
+
+#: openplotterSdrVhf.py:801
+msgid "All windows will close and you will need to restart processes manually after changing the device serial number.\n\n"
+"Are you sure?"
+msgstr "Alle Fenster werden geschlossen und Sie müssen den Prozess nach dem Ändern der Geräte-Seriennummer manuell neu starten.\n\n"
+"Sind Sie sicher?"
+
+#: openplotterSdrVhf.py:804
+msgid "Please replug the device for changes to take effect. Press Enter to close this window."
+msgstr "Bitte stecken Sie das Gerät neu ein, damit die Änderungen wirksam werden, und starten Sie die SDR-Prozesse manuell neu.  Drücken Sie Enter, um dieses Fenster zu schließen."
+
+#: openplotterSdrVhf.py:819
+msgid "PPM should be a number."
+msgstr "PPM sollte eine Zahl sein."
+
+#: openplotterSdrVhf.py:846
+msgid "AIS settings"
+msgstr "AIS-Einstellungen"
+
+#: openplotterSdrVhf.py:861 openplotterSdrVhf.py:1018
+msgid "Check"
+msgstr "Prüfen"
+
+#: openplotterSdrVhf.py:863
+msgid "leave blank for auto"
+msgstr "Für Standard leer lassen"
+
+#: openplotterSdrVhf.py:868 openplotterSdrVhf.py:1024
+msgid "Port"
+msgstr "Port"
+
+#: openplotterSdrVhf.py:872 openplotterSdrVhf.py:1028
+msgid "Save"
+msgstr "Speichern"
+
+#: openplotterSdrVhf.py:983 openplotterSdrVhf.py:1160
+msgid "Gain, PPM and Port should be numbers."
+msgstr "Vertärkung, PPM und Kanal sollten Zahlen sein."
+
+#: openplotterSdrVhf.py:1003
+msgid "ADS-B settings"
+msgstr "ADS-B Einstellungen"
+
+#: openplotterSdrVhf.py:1171
+msgid "Escanning DVB-T channels"
+msgstr "DVB-T Kanäle Escanner"
+
+#: openplotterSdrVhf.py:1174
+msgid "Country code"
+msgstr "Ländercode"
+
+#: openplotterSdrVhf.py:1177
+msgid "Get list"
+msgstr "Liste abrufen"
+
+#: openplotterSdrVhf.py:1180
+msgid "Scan"
+msgstr "Scannen"
+
+#: ports.py:42
 msgid "SDR AIS output"
 msgstr "SDR AIS output"
+
+#: ports.py:57
+msgid "SDR ADS-B web interface"
+msgstr "SDR ADS-B Web-Schnittstelle"
+
+#: ports.py:58 ports.py:59 ports.py:60 ports.py:61 ports.py:62
+msgid "SDR ADS-B decoder"
+msgstr "SDR ADS-B Decodierer"
 
 #: sdrVhfPostInstall.py:33
 msgid "Installing python packages..."
 msgstr "Python-Pakete werden installiert..."
 
-#: sdrVhfPostInstall.py:36 sdrVhfPostInstall.py:61 sdrVhfPreUninstall.py:33
-#: sdrVhfPreUninstall.py:42 sdrVhfPreUninstall.py:48
-msgid "DONE"
-msgstr "FERTIG"
-
-#: sdrVhfPostInstall.py:37 sdrVhfPostInstall.py:62 sdrVhfPostInstall.py:67
-#: sdrVhfPreUninstall.py:34 sdrVhfPreUninstall.py:43 sdrVhfPreUninstall.py:49
-msgid "FAILED: "
-msgstr "FEHLGESCHLAGEN: "
-
 #: sdrVhfPostInstall.py:39
-msgid "Adding rtl_ais service..."
-msgstr "rtl_ais Service wird hinzugefügt..."
+msgid "Copying udev rules..."
+msgstr "Kopiere udev-Regeln..."
 
-#: sdrVhfPostInstall.py:64
+#: sdrVhfPostInstall.py:47
 msgid "Setting version..."
 msgstr "Setze Version..."
 
@@ -244,6 +406,35 @@ msgstr "Entferne Python-Pakete..."
 msgid "Removing rtl_ais service..."
 msgstr "Entferne rtl_ais-Service..."
 
-#: sdrVhfPreUninstall.py:45
+#: sdrVhfPreUninstall.py:50
 msgid "Removing version..."
 msgstr "Entferne Version..."
+
+#: startup.py:43
+msgid "Checking SDR processes conflicts..."
+msgstr "Überprüfe Konflikte im SDR-Prozess"
+
+#: startup.py:77
+msgid "AIS and ADS-B processes are trying to read the same SDR device."
+msgstr "AIS- und ADS-B-Prozesse versuchen dasselbe SDR-Gerät zu lesen."
+
+#: startup.py:79 startup.py:81
+msgid "no conflicts"
+msgstr "keine Konflikte"
+
+#: unInstallDvbt.py:29
+msgid "Uninstalling w-scan..."
+msgstr "Deinstalliere w-Scan..."
+
+#: unInstallGqrx.py:29
+msgid "Uninstalling GQRX..."
+msgstr "Deinstalliere GQRX..."
+
+#: unInstallPiaware.py:29
+msgid "Uninstalling piaware and dump1090-fa..."
+msgstr "Deinstalliere piaware und dump1090-fa..."
+
+#: unInstallPiaware.py:37
+msgid "Removing source..."
+msgstr "Entferne Quelle..."
+

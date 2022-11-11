@@ -1168,7 +1168,7 @@ class editDvbt(wx.Dialog):
 	def __init__(self):
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 
-		wx.Dialog.__init__(self, None, title=_('Escanning DVB-T channels'), size=(370,120))
+		wx.Dialog.__init__(self, None, title=_('Scanning DVB-T channels'), size=(370,120))
 		panel = wx.Panel(self)
 
 		codeLabel = wx.StaticText(panel, label =_('Country code'))
