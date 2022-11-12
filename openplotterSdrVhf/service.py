@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This file is part of Openplotter.
-# Copyright (C) 2020 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
+# This file is part of OpenPlotter.
+# Copyright (C) 2022 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
 # Copyright (C) 2020 by e-sailing <https://github.com/e-sailing/openplotter-sdr-vhf>
 #
 # Openplotter is free software: you can redistribute it and/or modify
@@ -15,10 +15,13 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
+
 import sys, subprocess, os
 from openplotterSettings import conf
 
-def onKillProcesses():
+conf2 = conf.Conf()
+
+if sys.argv[1]=='stopProcesses':
 	subprocess.call(['pkill', '-15', 'rtl_test'])
 	subprocess.call(['pkill', '-15', 'kal'])
 	subprocess.call(['pkill', '-15', 'rtl_eeprom'])
@@ -26,21 +29,18 @@ def onKillProcesses():
 	subprocess.call(['pkill', '-15', 'welle-io'])
 	subprocess.call(['pkill', '-15', 'w_scan'])
 	subprocess.call(['pkill', '-15', 'vlc'])
-
-conf2 = conf.Conf()
-
-if sys.argv[1]=='stopProcesses':
-	onKillProcesses()
 	subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
+	'''
 	subprocess.call(['systemctl', 'stop', 'dump1090-fa'])
 	subprocess.call(['systemctl', 'stop', 'piaware'])
+	'''
 
-if sys.argv[1]=='restartProcesses':
-	onKillProcesses()
+if sys.argv[1]=='startProcesses':
 	try:
 		subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
 		subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
 	except: pass
+	'''
 	try:
 		subprocess.check_output(['systemctl', 'is-enabled', 'dump1090-fa']).decode(sys.stdin.encoding)
 		subprocess.call(['systemctl', 'restart', 'dump1090-fa'])
@@ -49,14 +49,15 @@ if sys.argv[1]=='restartProcesses':
 		subprocess.check_output(['systemctl', 'is-enabled', 'piaware']).decode(sys.stdin.encoding)
 		subprocess.call(['systemctl', 'restart', 'piaware'])
 	except: pass
+	'''
 	try:
 		subprocess.call(['systemctl', 'stop', 'signalk.service'])
 		subprocess.call(['systemctl', 'stop', 'signalk.socket'])
 		subprocess.call(['systemctl', 'start', 'signalk.socket'])
 		subprocess.call(['systemctl', 'start', 'signalk.service'])
 	except: pass
-	subprocess.call(['service', 'lighttpd', 'restart'])
-
+	#subprocess.call(['service', 'lighttpd', 'restart'])
+'''
 if sys.argv[1]=='editAdsb':
 	index = sys.argv[2]
 	gain = sys.argv[3]
@@ -94,7 +95,7 @@ if sys.argv[1]=='editAdsb':
 	if os.system('diff 89-dump1090-fa.conf /etc/lighttpd/conf-available/89-dump1090-fa.conf > /dev/null'):
 		os.system('mv 89-dump1090-fa.conf /etc/lighttpd/conf-available')
 	else: os.system('rm -f 89-dump1090-fa.conf')
-
+'''
 if sys.argv[1]=='editSdrAis':
 	home = sys.argv[2]
 	gain = sys.argv[3]

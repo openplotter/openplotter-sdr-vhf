@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This file is part of Openplotter.
-# Copyright (C) 2020 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
+# This file is part of OpenPlotter.
+# Copyright (C) 2022 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
 # Copyright (C) 2020 by e-sailing <https://github.com/e-sailing/openplotter-sdr-vhf>
 #
 # Openplotter is free software: you can redistribute it and/or modify
@@ -31,7 +31,7 @@ def main():
 		sources = subprocess.check_output('apt-cache policy', shell=True).decode(sys.stdin.encoding)
 		source = 'http://flightaware.com/adsb/piaware/files/packages'
 		gpgKey = currentdir+'/data/flightaware-archive-keyring.gpg'
-		sourceList = currentdir+'/data/piaware-buster.list'
+		sourceList = currentdir+'/data/piaware-bullseye.list'
 		if not source in sources: 
 			os.system('cp '+sourceList+' /etc/apt/sources.list.d')
 			os.system('cp '+gpgKey+' /etc/apt/trusted.gpg.d')

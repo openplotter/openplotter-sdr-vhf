@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This file is part of Openplotter.
-# Copyright (C) 2020 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
+# This file is part of OpenPlotter.
+# Copyright (C) 2022 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
 # Copyright (C) 2020 by e-sailing <https://github.com/e-sailing/openplotter-sdr-vhf>
 # 
 # Openplotter is free software: you can redistribute it and/or modify
@@ -15,6 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Openplotter. If not, see <http://www.gnu.org/licenses/>.
+
 import os, subprocess, sys
 from openplotterSettings import language
 

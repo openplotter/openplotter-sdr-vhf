@@ -1,3 +1,9 @@
+openplotter-sdr-vhf (3.0.7-beta) bullseye; urgency=medium
+
+  * beta 
+
+ -- Sailoog <info@sailoog.com>  Fri, 11 Nov 2022 12:38:18 +0100
+
 openplotter-sdr-vhf (2.1.1-beta) bionic; urgency=medium
 
   * Fix errors

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This file is part of Openplotter.
-# Copyright (C) 2020 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
+# This file is part of OpenPlotter.
+# Copyright (C) 2022 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
 # Copyright (C) 2020 by e-sailing <https://github.com/e-sailing/openplotter-sdr-vhf>
 #
 # Openplotter is free software: you can redistribute it and/or modify
@@ -118,6 +118,7 @@ class MyFrame(wx.Frame):
 		}
 		self.appsDict.append(app)
 
+		'''
 		app = {
 		'name': 'ADS-B',
 		'included': False,
@@ -127,8 +128,9 @@ class MyFrame(wx.Frame):
 		'install': self.platform.admin+' python3 '+self.currentdir+'/installPiaware.py',
 		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPiaware.py',
 		}
-		self.appsDict.append(app)
-		
+		#self.appsDict.append(app)
+		'''
+
 		app = {
 		'name': 'AIS',
 		'included': True,
@@ -192,7 +194,7 @@ class MyFrame(wx.Frame):
 			return
 		dlg.Destroy()
 		self.ShowStatusBarYELLOW(_('Restarting SDR processes. Please wait...'))
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'startProcesses'])
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -287,6 +289,21 @@ class MyFrame(wx.Frame):
 						gqrxppm = gqrx_conf.get('input', 'corr_freq')
 						if gqrxppm: self.listApps.SetItem(item, 4, str(int(gqrxppm)/1000000))
 					except Exception as e: print('error getting gqrx settings: '+str(e))
+			elif i['name'] == 'DAB':
+				if not self.platform.isInstalled('welle.io'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+					self.listApps.SetItem(item, 2, _('First available'))
+			elif i['name'] == 'DVB-T':
+				if not self.platform.isInstalled('w-scan'):
+					self.listApps.SetItem(item, 1, _('not installed'))
+					self.listApps.SetItemBackgroundColour(item,(200,200,200))
+				else:
+					self.listApps.SetItem(item, 1, _('installed'))
+					self.listApps.SetItem(item, 2, _('First available'))
+			'''
 			elif i['name'] == 'ADS-B':
 				if not self.platform.isInstalled('piaware'):
 					self.listApps.SetItem(item, 1, _('not installed'))
@@ -312,27 +329,15 @@ class MyFrame(wx.Frame):
 										if device == str(RtlSdr.get_device_index_by_serial(ii)):
 											self.listApps.SetItem(item, 3, ii)
 					except Exception as e: print(str(e))
-			elif i['name'] == 'DAB':
-				if not self.platform.isInstalled('welle.io'):
-					self.listApps.SetItem(item, 1, _('not installed'))
-					self.listApps.SetItemBackgroundColour(item,(200,200,200))
-				else:
-					self.listApps.SetItem(item, 1, _('installed'))
-					self.listApps.SetItem(item, 2, _('First available'))
-			elif i['name'] == 'DVB-T':
-				if not self.platform.isInstalled('w-scan'):
-					self.listApps.SetItem(item, 1, _('not installed'))
-					self.listApps.SetItemBackgroundColour(item,(200,200,200))
-				else:
-					self.listApps.SetItem(item, 1, _('installed'))
-					self.listApps.SetItem(item, 2, _('First available'))
-		
+			'''
+
 		self.onListAppsDeselected()
 		if self.started:
 			self.started = False
 			self.statusUpdate()
 			self.started = True
-		
+			
+		'''
 		indexAis = self.listApps.GetItemText(0, 2)
 		indexAdsb = self.listApps.GetItemText(1, 2)
 		if indexAis == indexAdsb:
@@ -347,6 +352,7 @@ class MyFrame(wx.Frame):
 			if worksAis and worksAdsb:
 				self.listApps.SetItemBackgroundColour(0,(255,0,0))
 				self.listApps.SetItemBackgroundColour(1,(255,0,0))
+		'''
 
 	def OnToolInstall(self, e):
 		index = self.listApps.GetFirstSelected()
@@ -407,32 +413,21 @@ class MyFrame(wx.Frame):
 			if res == wx.ID_OK:
 				self.manageSKconnection(self.conf.get('SDR-VHF', 'sdraisport'))
 			dlg.Destroy()
-
+		'''
 		if apps[i]['name'] == 'ADS-B':
 			dlg = editAdsb(self.conf)
 			res = dlg.ShowModal()
 			dlg.Destroy()
-
+		'''
 		if apps[i]['name'] == 'DVB-T':
 			dlg = editDvbt()
 			res = dlg.ShowModal()
 			if res == wx.ID_OK:
-				command = 'w_scan -ft -c '+dlg.code+' -L > '+self.conf.home+'/.openplotter/dvb.xspf'
-				msg = _('Scanning channels, please wait... ')
-				self.logger.Clear()
-				self.notebook.ChangeSelection(2)
-				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
-				for line in popen.stdout:
-					try:
-						if not 'Warning' in line and not 'WARNING' in line:
-							self.logger.WriteText(line)
-							self.ShowStatusBarYELLOW(msg+line)
-							self.logger.ShowPosition(self.logger.GetLastPosition())
-					except Exception as e: self.logger.WriteText(str(e))
+				subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/scan.sh', dlg.code, _('The available channel list has been saved in /.openplotter/dvb.xspf. Press Enter to close this window and click "Show" to play.')])
 			dlg.Destroy()
 
 		self.ShowStatusBarYELLOW(_('Restarting SDR processes. Please wait...'))
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'restartProcesses'])
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'startProcesses'])
 		time.sleep(1)
 		self.OnRefreshButton()
 		self.ShowStatusBarGREEN(_('Done'))
@@ -461,6 +456,9 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		apps = list(reversed(self.appsDict))
 		show = apps[index]['show']
+		self.ShowStatusBarYELLOW(_('Stopping all SDR processes. Please wait...'))
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+		self.SetStatusText('')
 		if show:
 			if 'http' in show:
 				webbrowser.open(show, new=2)
@@ -993,7 +991,7 @@ class editSdrAis(wx.Dialog):
 		self.EndModal(wx.ID_OK)
 
 ################################################################################
-
+'''
 class editAdsb(wx.Dialog):
 	def __init__(self, conf):
 		self.conf = conf
@@ -1161,7 +1159,7 @@ class editAdsb(wx.Dialog):
 			return
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editAdsb', str(index), str(gain), str(ppm), str(port)])
 		self.EndModal(wx.ID_OK)
-
+'''
 ################################################################################
 
 class editDvbt(wx.Dialog):

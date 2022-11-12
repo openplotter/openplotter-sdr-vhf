@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This file is part of Openplotter.
-# Copyright (C) 2020 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
+# This file is part of OpenPlotter.
+# Copyright (C) 2022 by Sailoog <https://github.com/openplotter/openplotter-sdr-vhf>
 # Copyright (C) 2020 by e-sailing <https://github.com/e-sailing/openplotter-sdr-vhf>
 #
 # Openplotter is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ def main():
 
 	print(_('Removing source...'))
 	try:
-		subprocess.call(('rm -rf /etc/apt/sources.list.d/piaware-buster.list').split())
+		subprocess.call(('rm -rf /etc/apt/sources.list.d/piaware-bullseye.list').split())
 		os.system('apt update')
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
