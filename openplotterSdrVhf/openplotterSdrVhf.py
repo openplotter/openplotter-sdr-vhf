@@ -118,19 +118,6 @@ class MyFrame(wx.Frame):
 		}
 		self.appsDict.append(app)
 
-		'''
-		app = {
-		'name': 'ADS-B',
-		'included': False,
-		'show': 'http://localhost/dump1090-fa/',
-		'service': ['dump1090-fa','piaware'],
-		'edit': True,
-		'install': self.platform.admin+' python3 '+self.currentdir+'/installPiaware.py',
-		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallPiaware.py',
-		}
-		#self.appsDict.append(app)
-		'''
-
 		app = {
 		'name': 'AIS',
 		'included': True,
@@ -303,56 +290,12 @@ class MyFrame(wx.Frame):
 				else:
 					self.listApps.SetItem(item, 1, _('installed'))
 					self.listApps.SetItem(item, 2, _('First available'))
-			'''
-			elif i['name'] == 'ADS-B':
-				if not self.platform.isInstalled('piaware'):
-					self.listApps.SetItem(item, 1, _('not installed'))
-					self.listApps.SetItemBackgroundColour(item,(200,200,200))
-				else:
-					self.listApps.SetItem(item, 1, _('installed'))
-					try:
-						with open('/etc/default/dump1090-fa', 'r') as f:
-							for line in f:
-								if 'RECEIVER_OPTIONS=' in line:
-									line = line.replace('\n', '')
-									line = line.strip()
-									items = line.split('=')
-									item1 = items[1].replace('"', '')
-									item1 = item1.strip()
-									options = item1.split(' ')
-									#--device-index 1 --gain -10 --ppm 0
-									device = options[1]
-									ppm = options[5]
-									self.listApps.SetItem(item, 2, device)
-									self.listApps.SetItem(item, 4, ppm)
-									for ii in serial_numbers:
-										if device == str(RtlSdr.get_device_index_by_serial(ii)):
-											self.listApps.SetItem(item, 3, ii)
-					except Exception as e: print(str(e))
-			'''
 
 		self.onListAppsDeselected()
 		if self.started:
 			self.started = False
 			self.statusUpdate()
 			self.started = True
-			
-		'''
-		indexAis = self.listApps.GetItemText(0, 2)
-		indexAdsb = self.listApps.GetItemText(1, 2)
-		if indexAis == indexAdsb:
-			try:
-				subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
-				worksAis = True
-			except: worksAis = False
-			try:
-				subprocess.check_output(['systemctl', 'is-enabled', 'dump1090-fa']).decode(sys.stdin.encoding)
-				worksAdsb = True
-			except: worksAdsb = False
-			if worksAis and worksAdsb:
-				self.listApps.SetItemBackgroundColour(0,(255,0,0))
-				self.listApps.SetItemBackgroundColour(1,(255,0,0))
-		'''
 
 	def OnToolInstall(self, e):
 		index = self.listApps.GetFirstSelected()
@@ -413,12 +356,7 @@ class MyFrame(wx.Frame):
 			if res == wx.ID_OK:
 				self.manageSKconnection(self.conf.get('SDR-VHF', 'sdraisport'))
 			dlg.Destroy()
-		'''
-		if apps[i]['name'] == 'ADS-B':
-			dlg = editAdsb(self.conf)
-			res = dlg.ShowModal()
-			dlg.Destroy()
-		'''
+
 		if apps[i]['name'] == 'DVB-T':
 			dlg = editDvbt()
 			res = dlg.ShowModal()
@@ -541,7 +479,6 @@ class MyFrame(wx.Frame):
 			else: 
 				self.listSystemd.SetItem(i, 4, _('dead'))
 				self.listSystemd.SetItemBackgroundColour(i,(-1,-1,-1))
-
 						
 	def onStart(self,e):
 		index = self.listSystemd.GetFirstSelected()
@@ -990,176 +927,6 @@ class editSdrAis(wx.Dialog):
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', self.conf.home, str(gain)])
 		self.EndModal(wx.ID_OK)
 
-################################################################################
-'''
-class editAdsb(wx.Dialog):
-	def __init__(self, conf):
-		self.conf = conf
-		self.currentdir = os.path.dirname(os.path.abspath(__file__))
-		self.platform = platform.Platform()
-
-		wx.Dialog.__init__(self, None, title=_('ADS-B settings'), size=(550,280))
-		panel = wx.Panel(self)
-
-		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
-		self.listDev = wx.ListCtrl(panel, -1, style=wx.LC_REPORT | wx.LC_SINGLE_SEL | wx.LC_HRULES, size=(-1,100))
-		self.listDev.InsertColumn(0, _('Index'), width=60)
-		self.listDev.InsertColumn(1, _('Serial'), width=140)
-		self.listDev.InsertColumn(2, 'PPM', width=50)
-		self.listDev.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListDevSelected)
-		self.listDev.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListDevDeselected)
-		self.listDev.SetTextColour(wx.BLACK)
-
-		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
-		gainLabel = wx.StaticText(panel, label=_('Gain'))
-		self.gain = wx.TextCtrl(panel)
-		self.getGain = wx.Button(panel, label=_('Check'))
-		self.Bind(wx.EVT_BUTTON, self.onGetGain, self.getGain)
-
-		ppmLabel = wx.StaticText(panel, label=_('PPM'))
-		self.ppm = wx.TextCtrl(panel)
-
-		portLabel = wx.StaticText(panel, label=_('Port'))
-		self.port = wx.TextCtrl(panel)
-
-		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
-		self.okBtn = wx.Button(panel, label=_('Save'))
-		self.Bind(wx.EVT_BUTTON, self.onOkBtn, self.okBtn)
-
-		listDevLabelBox = wx.StaticBoxSizer(listDevLabel, wx.VERTICAL)
-		listDevLabelBox.Add(self.listDev, 1, wx.ALL | wx.EXPAND, 5)
-		listDevLabelBox.AddSpacer(5)
-
-		gainBox = wx.BoxSizer(wx.HORIZONTAL)
-		gainBox.Add(gainLabel, 0, wx.ALL | wx.EXPAND, 5)
-		gainBox.Add(self.gain, 1, wx.ALL | wx.EXPAND, 5)
-		gainBox.Add(self.getGain, 0, wx.ALL | wx.EXPAND, 5)
-
-		ppmBox = wx.BoxSizer(wx.HORIZONTAL)
-		ppmBox.Add(ppmLabel, 0, wx.ALL | wx.EXPAND, 5)
-		ppmBox.Add(self.ppm, 1, wx.ALL | wx.EXPAND, 5)
-
-		portBox = wx.BoxSizer(wx.HORIZONTAL)
-		portBox.Add(portLabel, 0, wx.ALL | wx.EXPAND, 5)
-		portBox.Add(self.port, 1, wx.ALL | wx.EXPAND, 5)
-
-		finalBox = wx.StaticBoxSizer(finalSettingsLabel, wx.VERTICAL)
-		finalBox.Add(gainBox, 0, wx.ALL | wx.EXPAND, 5)
-		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 5)
-		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 5)
-
-		firstBox = wx.BoxSizer(wx.HORIZONTAL)
-		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
-		firstBox.Add(finalBox, 1, wx.ALL | wx.EXPAND, 5)
-
-		buttonsBox = wx.BoxSizer(wx.HORIZONTAL)
-		buttonsBox.Add(cancelBtn, 1, wx.ALL | wx.EXPAND, 5)
-		buttonsBox.Add(self.okBtn, 1, wx.ALL | wx.EXPAND, 5)
-
-		vbox = wx.BoxSizer(wx.VERTICAL)
-		vbox.Add(firstBox, 1, wx.ALL | wx.EXPAND, 0)
-		vbox.Add(buttonsBox, 0, wx.ALL | wx.EXPAND, 5)
-
-		panel.SetSizer(vbox)
-		self.Centre()
-
-		self.read()
-
-	def read(self):
-		from rtlsdr import RtlSdr
-		self.onListDevDeselected()
-		self.listDev.DeleteAllItems()
-		serial_numbers = RtlSdr.get_device_serial_addresses()
-		for i in serial_numbers:
-			device_index = RtlSdr.get_device_index_by_serial(i)
-			item = self.listDev.InsertItem(0, str(device_index))
-			self.listDev.SetItem(item, 1, str(i))
-			try:
-				devicesList = eval(self.conf.get('SDR-VHF', 'deviceslist'))
-			except: devicesList = []
-			for ii in devicesList:
-				if ii['serial'] == i: self.listDev.SetItem(item, 2, str(ii['ppm']))
-		device = ''
-		ppm = ''
-		gain = ''
-		port = ''
-		try:
-			with open('/etc/default/dump1090-fa', 'r') as f:
-				for line in f:
-					if 'RECEIVER_OPTIONS=' in line:
-						line = line.replace('\n', '')
-						line = line.strip()
-						items = line.split('=')
-						item1 = items[1].replace('"', '')
-						item1 = item1.strip()
-						options = item1.split(' ')
-						#--device-index 1 --gain -10 --ppm 0
-						device = options[1]
-						gain = options[3]
-						ppm = options[5]
-			with open('/etc/lighttpd/conf-available/89-dump1090-fa.conf', 'r') as f:
-				for line in f:
-					#$SERVER["socket"] == ":8081" {
-					if '$SERVER["socket"]' in line:
-						line = line.replace('\n', '')
-						line = line.strip()
-						items = line.split('==')
-						item1 = items[1].replace('"', '')
-						item1 = item1.replace(':', '')
-						item1 = item1.replace('{', '')
-						port = item1.strip()
-		except Exception as e: print(str(e))
-		if ppm: self.ppm.SetValue(ppm)
-		if gain: self.gain.SetValue(gain)
-		if port: self.port.SetValue(port)
-		if device:
-			listCount = range(self.listDev.GetItemCount())
-			for i in listCount:
-				if device == self.listDev.GetItemText(i, 0):
-					self.listDev.Select(i)
-					self.onListDevSelected()
-					break
-
-	def onListDevSelected(self,e=0):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		self.ppm.Enable()
-		self.gain.Enable()
-		self.getGain.Enable()
-		self.okBtn.Enable()
-		self.port.Enable()
-
-	def onListDevDeselected(self,e=0):
-		self.ppm.Disable()
-		self.gain.Disable()
-		self.getGain.Disable()
-		self.okBtn.Disable()
-		self.port.Disable()
-
-	def onGetGain(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		subprocess.call(['pkill', '-15', 'rtl_test'])
-		subprocess.call(['x-terminal-emulator','-e', 'rtl_test', '-d', self.listDev.GetItemText(i, 0)])
-
-	def onOkBtn(self,e):
-		i = self.listDev.GetFirstSelected()
-		if i == -1: return
-		index = self.listDev.GetItemText(i, 0)
-		gain = self.gain.GetValue()
-		ppm = self.ppm.GetValue()
-		port = self.port.GetValue()
-		try:
-			float(gain)
-			ppm = round(float(ppm))
-			float(port)
-		except Exception as e: 
-			print(str(e))
-			wx.MessageBox(_('Gain, PPM and Port should be numbers.'), _('Error'), wx.OK | wx.ICON_ERROR)
-			return
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editAdsb', str(index), str(gain), str(ppm), str(port)])
-		self.EndModal(wx.ID_OK)
-'''
 ################################################################################
 
 class editDvbt(wx.Dialog):
