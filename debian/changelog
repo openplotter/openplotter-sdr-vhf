@@ -1,6 +1,6 @@
-openplotter-sdr-vhf (3.0.8-beta) bullseye; urgency=medium
+openplotter-sdr-vhf (3.0.9-stable) bullseye; urgency=medium
 
-  * beta 
+  * v3
 
  -- Sailoog <info@sailoog.com>  Fri, 11 Nov 2022 12:38:18 +0100
 
