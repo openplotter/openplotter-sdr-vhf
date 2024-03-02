@@ -47,10 +47,11 @@ if sys.argv[1]=='startProcesses':
 if sys.argv[1]=='editSdrAis':
 	home = sys.argv[2]
 	gain = sys.argv[3]
+	enable = sys.argv[4]
 	if gain == 'auto': 
-		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'
+		execStart = 'ExecStart=/usr/local/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'
 	else: 
-		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'
+		execStart = 'ExecStart=/usr/local/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'
 	try:
 		fo = open('/etc/systemd/system/openplotter-rtl_ais.service', "w")
 		fo.write(
@@ -71,5 +72,7 @@ if sys.argv[1]=='editSdrAis':
 		'WantedBy=multi-user.target\n'
 		)
 		fo.close()
-		subprocess.call((' systemctl daemon-reload').split())
+		subprocess.call(['systemctl', 'daemon-reload'])
+		if enable == '1': subprocess.call(['systemctl', 'enable', 'openplotter-rtl_ais'])
+		else: subprocess.call(['systemctl', 'disable', 'openplotter-rtl_ais'])
 	except Exception as e: print(str(e))
