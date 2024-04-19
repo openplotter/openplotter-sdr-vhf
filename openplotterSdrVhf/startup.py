@@ -48,9 +48,8 @@ class Check():
 		red = ''
 
 		try:
-			subprocess.check_output(['systemctl', 'is-active', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
+			subprocess.check_output(['systemctl', 'is-active', 'ais-catcher']).decode(sys.stdin.encoding)
 			green = _('SDR AIS is running')
-		except:
-			black = _('SDR AIS is not running')
+		except: black = _('SDR AIS is not running')
 
 		return {'green': green,'black': black,'red': red}

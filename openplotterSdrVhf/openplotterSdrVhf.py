@@ -108,7 +108,7 @@ class MyFrame(wx.Frame):
 		app = {
 		'name': 'AIS',
 		'included': True,
-		'show': '',
+		'show': 'http://localhost:8100',
 		'edit': True,
 		'install': '',
 		'uninstall': '',
@@ -215,7 +215,13 @@ class MyFrame(wx.Frame):
 		if self.listApps.GetItemBackgroundColour(i) != (200,200,200):
 			if apps[i]['edit']:
 				self.toolbar2.EnableTool(201,True)
-			if apps[i]['show']: self.toolbar2.EnableTool(202,True)
+			if apps[i]['show']:
+				if 'http' in apps[i]['show']:
+					try:
+						subprocess.check_output(['systemctl', 'is-active', 'ais-catcher']).decode(sys.stdin.encoding)
+						self.toolbar2.EnableTool(202,True)
+					except: pass
+				else: self.toolbar2.EnableTool(202,True)
 
 	def onListAppsDeselected(self, event=0):
 		self.toolbar2.EnableTool(202,False)
@@ -240,7 +246,7 @@ class MyFrame(wx.Frame):
 				sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
 				if sdraisppm: self.listApps.SetItem(item, 4, sdraisppm)
 				try:
-					subprocess.check_output(['systemctl', 'is-active', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
+					subprocess.check_output(['systemctl', 'is-active', 'ais-catcher']).decode(sys.stdin.encoding)
 					self.listApps.SetItemBackgroundColour(item,(0,200,0))
 				except: pass
 			elif i['name'] == 'GQRX':
@@ -389,11 +395,13 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		apps = list(reversed(self.appsDict))
 		show = apps[index]['show']
-		if show: 
-			subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
-			subprocess.Popen((show).split())
-			self.OnRefreshButton()
-			self.ShowStatusBarYELLOW(_('Stopping all SDR processes.'))
+		if show:
+			if 'http' in show: webbrowser.open(show, new=2)
+			else:
+				subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
+				subprocess.Popen((show).split())
+				self.OnRefreshButton()
+				self.ShowStatusBarYELLOW(_('Stopping all SDR processes.'))
 
 ################################################################################
 
@@ -412,7 +420,7 @@ class editCalibration(wx.Dialog):
 		self.conf = conf
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 
-		wx.Dialog.__init__(self, None, title=_('Calibrating devices'), size=(500,444))
+		wx.Dialog.__init__(self, None, title=_('Calibrating devices'), size=(500,400))
 		panel = wx.Panel(self)
 
 		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
@@ -681,11 +689,9 @@ class editSdrAis(wx.Dialog):
 		portLabel = wx.StaticText(panel, label=_('Port'))
 		self.port = wx.TextCtrl(panel,size=(-1, 25))
 
-		self.enable = wx.CheckBox(panel, label=_('Enable ASI reception'))
-		try:
-			subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
-			self.enable.SetValue(True)
-		except: pass
+		self.enable = wx.CheckBox(panel, label=_('Enable AIS reception'))
+
+		self.share = wx.CheckBox(panel, label=_('Share with AIS-catcher'))
 
 		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
 		self.okBtn = wx.Button(panel, label=_('Save'))
@@ -716,6 +722,7 @@ class editSdrAis(wx.Dialog):
 		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 4)
 		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 4)
 		finalBox.Add(self.enable, 0, wx.ALL | wx.EXPAND, 4)
+		finalBox.Add(self.share, 0, wx.ALL | wx.EXPAND, 4)
 
 		firstBox = wx.BoxSizer(wx.HORIZONTAL)
 		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
@@ -763,6 +770,12 @@ class editSdrAis(wx.Dialog):
 					self.listDev.Select(i)
 					self.onListDevSelected()
 					break
+		if self.conf.get('SDR-VHF', 'share') == '1': self.share.SetValue(True)
+		else: self.share.SetValue(False)
+		try:
+			subprocess.check_output(['systemctl', 'is-enabled', 'ais-catcher']).decode(sys.stdin.encoding)
+			self.enable.SetValue(True)
+		except: self.enable.SetValue(False)
 
 	def onListDevSelected(self,e=0):
 		i = self.listDev.GetFirstSelected()
@@ -772,6 +785,7 @@ class editSdrAis(wx.Dialog):
 		self.getGain.Enable()
 		self.port.Enable()
 		self.enable.Enable()
+		self.share.Enable()
 		self.okBtn.Enable()
 
 
@@ -781,6 +795,7 @@ class editSdrAis(wx.Dialog):
 		self.getGain.Disable()
 		self.port.Disable()
 		self.enable.Disable()
+		self.share.Disable()
 		self.okBtn.Disable()
 
 	def onGetGain(self,e):
@@ -796,6 +811,9 @@ class editSdrAis(wx.Dialog):
 		gain = self.gain.GetValue()
 		ppm = self.ppm.GetValue()
 		port = self.port.GetValue()
+		if self.share.GetValue(): share = '1'
+		else: share = '0'
+		self.conf.set('SDR-VHF', 'share', share)
 		try:
 			if gain: float(gain)
 			else: gain = 'auto'
@@ -807,14 +825,12 @@ class editSdrAis(wx.Dialog):
 			return
 		self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(index))
 		self.conf.set('SDR-VHF', 'sdraisppm', str(ppm))
-		if gain == 'auto':
-			self.conf.set('SDR-VHF', 'sdraisgain', '')
-		else:
-			self.conf.set('SDR-VHF', 'sdraisgain', str(gain))
+		if gain == 'auto': self.conf.set('SDR-VHF', 'sdraisgain', '')
+		else: self.conf.set('SDR-VHF', 'sdraisgain', str(gain))
 		self.conf.set('SDR-VHF', 'sdraisport', str(port))
 		if self.enable.GetValue(): enable = '1'
 		else: enable = '0'
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', self.conf.home, str(gain), enable])
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', str(gain), str(ppm), str(index), str(port), enable, share])
 		self.EndModal(wx.ID_OK)
 
 ################################################################################

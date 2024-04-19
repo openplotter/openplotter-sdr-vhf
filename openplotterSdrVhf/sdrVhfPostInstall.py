@@ -30,17 +30,6 @@ def main():
 	package = 'openplotter-sdr-vhf'
 	language.Language(currentdir, package, currentLanguage)
 
-	print(_('Installing rtl-ais...'))
-	try:
-		os.chdir('/tmp')
-		os.system('rm -rf rtl-ais')
-		os.system('git clone https://github.com/dgiardini/rtl-ais')
-		os.chdir('rtl-ais')
-		os.system('make')
-		os.system('make install')
-		print(_('DONE'))
-	except Exception as e: print(_('FAILED: ')+str(e))
-
 	print(_('Installing kalibrate-rtl...'))
 	try:
 		os.chdir('/tmp')
