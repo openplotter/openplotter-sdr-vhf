@@ -29,7 +29,7 @@ def main():
 
 	print(_('Removing python packages...'))
 	try:
-		subprocess.call(['pip3', 'uninstall', '-y', 'pyrtlsdr'])
+		subprocess.call(['pip3', 'uninstall', '-y', 'pyrtlsdr', '--break-system-packages'])
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
