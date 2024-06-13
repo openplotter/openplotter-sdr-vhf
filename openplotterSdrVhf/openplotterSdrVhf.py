@@ -21,14 +21,7 @@ import wx.richtext as rt
 from openplotterSettings import conf
 from openplotterSettings import language
 from openplotterSettings import platform
-from wx.lib.mixins.listctrl import CheckListCtrlMixin, ListCtrlAutoWidthMixin
 from .version import version
-
-class CheckListCtrl(wx.ListCtrl, CheckListCtrlMixin, ListCtrlAutoWidthMixin):
-	def __init__(self, parent, height):
-		wx.ListCtrl.__init__(self, parent, -1, style=wx.LC_REPORT | wx.SUNKEN_BORDER, size=(650, height))
-		CheckListCtrlMixin.__init__(self)
-		ListCtrlAutoWidthMixin.__init__(self)
 
 class MyFrame(wx.Frame):
 	def __init__(self):
@@ -64,19 +57,15 @@ class MyFrame(wx.Frame):
 		self.notebook = wx.Notebook(self)
 		self.notebook.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.onTabChange)
 		self.sdrApps = wx.Panel(self.notebook)
-		self.systemd = wx.Panel(self.notebook)
 		self.output = wx.Panel(self.notebook)
 		self.notebook.AddPage(self.sdrApps, _('SDR tools'))
-		self.notebook.AddPage(self.systemd, _('Processes'))
 		self.notebook.AddPage(self.output, '')
 		self.il = wx.ImageList(24, 24)
 		img0 = self.il.Add(wx.Bitmap(self.currentdir+"/data/sdr.png", wx.BITMAP_TYPE_PNG))
-		img1 = self.il.Add(wx.Bitmap(self.currentdir+"/data/process.png", wx.BITMAP_TYPE_PNG))
-		img2 = self.il.Add(wx.Bitmap(self.currentdir+"/data/output.png", wx.BITMAP_TYPE_PNG))
+		img1 = self.il.Add(wx.Bitmap(self.currentdir+"/data/output.png", wx.BITMAP_TYPE_PNG))
 		self.notebook.AssignImageList(self.il)
 		self.notebook.SetPageImage(0, img0)
 		self.notebook.SetPageImage(1, img1)
-		self.notebook.SetPageImage(2, img2)
 
 		vbox = wx.BoxSizer(wx.VERTICAL)
 		vbox.Add(self.toolbar1, 0, wx.EXPAND)
@@ -89,7 +78,6 @@ class MyFrame(wx.Frame):
 		'name': 'DVB-T',
 		'included': False,
 		'show': 'vlc '+self.conf.home+'/.openplotter/dvb.xspf',
-		'service': '',
 		'edit': True,
 		'install': self.platform.admin+' python3 '+self.currentdir+'/installDvbt.py',
 		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallDvbt.py',
@@ -111,7 +99,6 @@ class MyFrame(wx.Frame):
 		'name': 'GQRX',
 		'included': False,
 		'show': 'gqrx',
-		'service': '',
 		'edit': False,
 		'install': self.platform.admin+' python3 '+self.currentdir+'/installGqrx.py',
 		'uninstall': self.platform.admin+' python3 '+self.currentdir+'/unInstallGqrx.py',
@@ -121,8 +108,7 @@ class MyFrame(wx.Frame):
 		app = {
 		'name': 'AIS',
 		'included': True,
-		'show': '',
-		'service': ['openplotter-rtl_ais'],
+		'show': 'http://localhost:8100',
 		'edit': True,
 		'install': '',
 		'uninstall': '',
@@ -131,7 +117,6 @@ class MyFrame(wx.Frame):
 
 		self.started = False
 		self.pageSdrApps()
-		self.pageSystemd()
 		self.pageOutput()
 
 		maxi = self.conf.get('GENERAL', 'maximize')
@@ -158,7 +143,7 @@ class MyFrame(wx.Frame):
 
 	def onTabChange(self, event):
 		try:
-			self.SetStatusText('')
+			self.SetStatusText(' ')
 		except:pass
 
 	def OnToolHelp(self, event): 
@@ -230,7 +215,13 @@ class MyFrame(wx.Frame):
 		if self.listApps.GetItemBackgroundColour(i) != (200,200,200):
 			if apps[i]['edit']:
 				self.toolbar2.EnableTool(201,True)
-			if apps[i]['show']: self.toolbar2.EnableTool(202,True)
+			if apps[i]['show']:
+				if 'http' in apps[i]['show']:
+					try:
+						subprocess.check_output(['systemctl', 'is-active', 'ais-catcher']).decode(sys.stdin.encoding)
+						self.toolbar2.EnableTool(202,True)
+					except: pass
+				else: self.toolbar2.EnableTool(202,True)
 
 	def onListAppsDeselected(self, event=0):
 		self.toolbar2.EnableTool(202,False)
@@ -254,6 +245,10 @@ class MyFrame(wx.Frame):
 							self.listApps.SetItem(item, 3, ii)
 				sdraisppm = self.conf.get('SDR-VHF', 'sdraisppm')
 				if sdraisppm: self.listApps.SetItem(item, 4, sdraisppm)
+				try:
+					subprocess.check_output(['systemctl', 'is-active', 'ais-catcher']).decode(sys.stdin.encoding)
+					self.listApps.SetItemBackgroundColour(item,(0,200,0))
+				except: pass
 			elif i['name'] == 'GQRX':
 				if not os.path.isdir(self.conf.home+'/.config/gqrx'):
 					self.listApps.SetItem(item, 1, _('not installed'))
@@ -290,6 +285,7 @@ class MyFrame(wx.Frame):
 				else:
 					self.listApps.SetItem(item, 1, _('installed'))
 					self.listApps.SetItem(item, 2, _('First available'))
+		self.ShowStatusBarBLACK(' ')
 
 		self.onListAppsDeselected()
 		if self.started:
@@ -308,15 +304,17 @@ class MyFrame(wx.Frame):
 			dlg = wx.MessageDialog(None, msg, _('Question'), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_EXCLAMATION)
 			if dlg.ShowModal() == wx.ID_YES:
 				self.logger.Clear()
-				self.notebook.ChangeSelection(2)
+				self.notebook.ChangeSelection(1)
+				self.ShowStatusBarYELLOW(_('Installing SDR app, please wait... '))
 				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
 				for line in popen.stdout:
 					if not 'Warning' in line and not 'WARNING' in line:
 						self.logger.WriteText(line)
-						self.ShowStatusBarYELLOW(_('Installing SDR app, please wait... ')+line)
 						self.logger.ShowPosition(self.logger.GetLastPosition())
+						wx.GetApp().Yield()
 				self.OnRefreshButton()
 				self.notebook.ChangeSelection(0)
+				self.ShowStatusBarGREEN(_('Done'))
 				if name == 'GQRX': subprocess.call(['pulseaudio', '--start'])
 			dlg.Destroy()
 
@@ -331,24 +329,26 @@ class MyFrame(wx.Frame):
 			dlg = wx.MessageDialog(None, msg, _('Question'), wx.YES_NO | wx.NO_DEFAULT | wx.ICON_EXCLAMATION)
 			if dlg.ShowModal() == wx.ID_YES:
 				self.logger.Clear()
-				self.notebook.ChangeSelection(2)
+				self.notebook.ChangeSelection(1)
+				self.ShowStatusBarYELLOW(_('Uninstalling SDR app, please wait... '))
 				popen = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, shell=True)
 				for line in popen.stdout:
 					if not 'Warning' in line and not 'WARNING' in line:
 						self.logger.WriteText(line)
-						self.ShowStatusBarYELLOW(_('Uninstalling SDR app, please wait... ')+line)
 						self.logger.ShowPosition(self.logger.GetLastPosition())
+						wx.GetApp().Yield()
 				self.OnRefreshButton()
 				self.notebook.ChangeSelection(0)
+				self.ShowStatusBarGREEN(_('Done'))
 			dlg.Destroy()
 
 	def OnEditButton(self, e):
 		i = self.listApps.GetFirstSelected()
 		if i == -1: return
 		apps = list(reversed(self.appsDict))
-		self.ShowStatusBarYELLOW(_('Stopping all SDR processes. Please wait...'))
+		self.ShowStatusBarYELLOW(_('Stopping all SDR processes.'))
+		wx.GetApp().Yield()
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
-		self.SetStatusText('')
 
 		if apps[i]['name'] == 'AIS':
 			dlg = editSdrAis(self.conf)
@@ -364,7 +364,8 @@ class MyFrame(wx.Frame):
 				subprocess.call(['x-terminal-emulator', '-e', 'bash', self.currentdir+'/data/scan.sh', dlg.code, _('The available channel list has been saved in /.openplotter/dvb.xspf. Press Enter to close this window and click "Show" to play.')])
 			dlg.Destroy()
 
-		self.ShowStatusBarYELLOW(_('Restarting SDR processes. Please wait...'))
+		self.ShowStatusBarYELLOW(_('Restarting SDR processes.'))
+		wx.GetApp().Yield()
 		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'startProcesses'])
 		time.sleep(1)
 		self.OnRefreshButton()
@@ -394,128 +395,13 @@ class MyFrame(wx.Frame):
 		if index == -1: return
 		apps = list(reversed(self.appsDict))
 		show = apps[index]['show']
-		self.ShowStatusBarYELLOW(_('Stopping all SDR processes. Please wait...'))
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
-		self.SetStatusText('')
 		if show:
-			if 'http' in show:
-				webbrowser.open(show, new=2)
+			if 'http' in show: webbrowser.open(show, new=2)
 			else:
+				subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'stopProcesses'])
 				subprocess.Popen((show).split())
-
-################################################################################
-
-	def pageSystemd(self):
-		self.started = False
-		self.aStatusList = [_('inactive'),_('active')]
-		self.bStatusList = [_('dead'),_('running')] 
-
-		self.listSystemd = CheckListCtrl(self.systemd, 152)
-		self.listSystemd.InsertColumn(0, _('Autostart'), width=90)
-		self.listSystemd.InsertColumn(1, _('App'), width=90)
-		self.listSystemd.InsertColumn(2, _('Process'), width=140)
-		self.listSystemd.InsertColumn(3, _('Status'), width=120)
-		self.listSystemd.InsertColumn(4, '  ', width=100)
-		self.listSystemd.Bind(wx.EVT_LIST_ITEM_SELECTED, self.onListSystemdSelected)
-		self.listSystemd.Bind(wx.EVT_LIST_ITEM_DESELECTED, self.onListSystemdDeselected)
-		self.listSystemd.SetTextColour(wx.BLACK)
-
-		self.listSystemd.OnCheckItem = self.OnCheckItem
-
-		self.toolbar3 = wx.ToolBar(self.systemd, style=wx.TB_TEXT | wx.TB_VERTICAL)
-		start = self.toolbar3.AddTool(301, _('Start'), wx.Bitmap(self.currentdir+"/data/start.png"))
-		self.Bind(wx.EVT_TOOL, self.onStart, start)
-		stop = self.toolbar3.AddTool(302, _('Stop'), wx.Bitmap(self.currentdir+"/data/stop.png"))
-		self.Bind(wx.EVT_TOOL, self.onStop, stop)
-		restart = self.toolbar3.AddTool(303, _('Restart'), wx.Bitmap(self.currentdir+"/data/restart.png"))
-		self.Bind(wx.EVT_TOOL, self.onRestart, restart)	
-
-		sizer = wx.BoxSizer(wx.HORIZONTAL)
-		sizer.Add(self.listSystemd, 1, wx.EXPAND, 0)
-		sizer.Add(self.toolbar3, 0)
-
-		self.systemd.SetSizer(sizer)
-
-		self.set_listSystemd()
-		self.started = True
-
-	def onListSystemdSelected(self, e):
-		i = e.GetIndex()
-		valid = e and i >= 0
-		if not valid: return
-		self.toolbar3.EnableTool(301,True)
-		self.toolbar3.EnableTool(302,True)
-		self.toolbar3.EnableTool(303,True)
-
-	def onListSystemdDeselected(self, event=0):
-		self.toolbar3.EnableTool(301,False)
-		self.toolbar3.EnableTool(302,False)
-		self.toolbar3.EnableTool(303,False)
-
-	def set_listSystemd(self):
-		apps = list(reversed(self.appsDict))
-		for i in apps:
-			if i['service']:
-				for ii in i['service']:
-					index = self.listSystemd.InsertItem(sys.maxsize, '')
-					self.listSystemd.SetItem(index, 1, i['name'])
-					self.listSystemd.SetItem(index, 2, ii)
-					command = 'systemctl show '+ii+' --no-page'
-					output = subprocess.check_output(command.split(),universal_newlines=True)
-					if 'UnitFileState=enabled' in output: self.listSystemd.CheckItem(index)
-		self.statusUpdate()
-
-	def statusUpdate(self):
-		listCount = range(self.listSystemd.GetItemCount())
-		for i in listCount:
-			service = self.listSystemd.GetItemText(i, 2)
-			command = 'systemctl show '+service+' --no-page'
-			output = subprocess.check_output(command.split(),universal_newlines=True)
-			if 'ActiveState=active' in output: self.listSystemd.SetItem(i, 3, _('active'))
-			else: self.listSystemd.SetItem(i, 3, _('inactive'))
-			if 'SubState=running' in output: 
-				self.listSystemd.SetItem(i, 4, _('running'))
-				self.listSystemd.SetItemBackgroundColour(i,(0,255,0))
-			else: 
-				self.listSystemd.SetItem(i, 4, _('dead'))
-				self.listSystemd.SetItemBackgroundColour(i,(-1,-1,-1))
-						
-	def onStart(self,e):
-		index = self.listSystemd.GetFirstSelected()
-		if index == -1: return
-		self.ShowStatusBarYELLOW(_('Starting process...'))
-		subprocess.call((self.platform.admin + ' systemctl start ' + self.listSystemd.GetItemText(index, 2)).split())
-		time.sleep(1)
-		self.OnRefreshButton()
-		self.ShowStatusBarGREEN(_('Done'))
-
-	def onStop(self,e):
-		index = self.listSystemd.GetFirstSelected()
-		if index == -1: return
-		self.ShowStatusBarYELLOW(_('Stopping process...'))
-		subprocess.call((self.platform.admin + ' systemctl stop ' + self.listSystemd.GetItemText(index, 2)).split())
-		time.sleep(1)
-		self.OnRefreshButton()
-		self.ShowStatusBarGREEN(_('Done'))
-
-	def onRestart(self,e):
-		index = self.listSystemd.GetFirstSelected()
-		if index == -1: return
-		self.ShowStatusBarYELLOW(_('Restarting process...'))
-		subprocess.call((self.platform.admin + ' systemctl restart ' + self.listSystemd.GetItemText(index, 2)).split())
-		time.sleep(1)
-		self.OnRefreshButton()
-		self.ShowStatusBarGREEN(_('Done'))
-		
-	def OnCheckItem(self, index, flag):
-		if not self.started: return
-		self.ShowStatusBarYELLOW(_('Enabling/Disabling process...'))
-		if flag:
-			subprocess.call((self.platform.admin + ' systemctl enable ' + self.listSystemd.GetItemText(index, 2)).split())
-		else:
-			subprocess.call((self.platform.admin + ' systemctl disable ' + self.listSystemd.GetItemText(index, 2)).split())
-		self.OnRefreshButton()
-		self.ShowStatusBarGREEN(_('Done'))
+				self.OnRefreshButton()
+				self.ShowStatusBarYELLOW(_('Stopping all SDR processes.'))
 
 ################################################################################
 
@@ -534,7 +420,7 @@ class editCalibration(wx.Dialog):
 		self.conf = conf
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 
-		wx.Dialog.__init__(self, None, title=_('Calibrating devices'), size=(500,444))
+		wx.Dialog.__init__(self, None, title=_('Calibrating devices'), size=(500,400))
 		panel = wx.Panel(self)
 
 		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
@@ -778,7 +664,7 @@ class editSdrAis(wx.Dialog):
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 		self.platform = platform.Platform()
 
-		wx.Dialog.__init__(self, None, title=_('AIS settings'), size=(550,300))
+		wx.Dialog.__init__(self, None, title=_('AIS settings'), size=(550,340))
 		panel = wx.Panel(self)
 
 		listDevLabel = wx.StaticBox(panel, label=_(' Detected SDR devices '))
@@ -792,16 +678,20 @@ class editSdrAis(wx.Dialog):
 
 		finalSettingsLabel = wx.StaticBox(panel, label=_(' Settings '))
 		gainLabel = wx.StaticText(panel, label=_('Gain'))
-		self.gain = wx.TextCtrl(panel)
+		self.gain = wx.TextCtrl(panel,size=(-1, 25))
 		self.getGain = wx.Button(panel, label=_('Check'))
 		self.Bind(wx.EVT_BUTTON, self.onGetGain, self.getGain)
 		autoLabel = wx.StaticText(panel, label=_('leave blank for auto'))
 
 		ppmLabel = wx.StaticText(panel, label=_('PPM'))
-		self.ppm = wx.TextCtrl(panel)
+		self.ppm = wx.TextCtrl(panel,size=(-1, 25))
 
 		portLabel = wx.StaticText(panel, label=_('Port'))
-		self.port = wx.TextCtrl(panel)
+		self.port = wx.TextCtrl(panel,size=(-1, 25))
+
+		self.enable = wx.CheckBox(panel, label=_('Enable AIS reception'))
+
+		self.share = wx.CheckBox(panel, label=_('Share with AIS-catcher'))
 
 		cancelBtn = wx.Button(panel, wx.ID_CANCEL)
 		self.okBtn = wx.Button(panel, label=_('Save'))
@@ -828,9 +718,11 @@ class editSdrAis(wx.Dialog):
 		finalBox.AddSpacer(5)
 		finalBox.Add(gainBox, 0, wx.LEFT | wx.RIGHT | wx.EXPAND, 5)
 		finalBox.Add(autoLabel, 0, wx.LEFT | wx.EXPAND, 10)
-		finalBox.AddSpacer(5)
-		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 5)
-		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 5)
+		finalBox.AddSpacer(4)
+		finalBox.Add(ppmBox, 0, wx.ALL | wx.EXPAND, 4)
+		finalBox.Add(portBox, 0, wx.ALL | wx.EXPAND, 4)
+		finalBox.Add(self.enable, 0, wx.ALL | wx.EXPAND, 4)
+		finalBox.Add(self.share, 0, wx.ALL | wx.EXPAND, 4)
 
 		firstBox = wx.BoxSizer(wx.HORIZONTAL)
 		firstBox.Add(listDevLabelBox, 1, wx.ALL | wx.EXPAND, 5)
@@ -878,6 +770,12 @@ class editSdrAis(wx.Dialog):
 					self.listDev.Select(i)
 					self.onListDevSelected()
 					break
+		if self.conf.get('SDR-VHF', 'share') == '1': self.share.SetValue(True)
+		else: self.share.SetValue(False)
+		try:
+			subprocess.check_output(['systemctl', 'is-enabled', 'ais-catcher']).decode(sys.stdin.encoding)
+			self.enable.SetValue(True)
+		except: self.enable.SetValue(False)
 
 	def onListDevSelected(self,e=0):
 		i = self.listDev.GetFirstSelected()
@@ -886,13 +784,18 @@ class editSdrAis(wx.Dialog):
 		self.gain.Enable()
 		self.getGain.Enable()
 		self.port.Enable()
+		self.enable.Enable()
+		self.share.Enable()
 		self.okBtn.Enable()
+
 
 	def onListDevDeselected(self,e=0):
 		self.ppm.Disable()
 		self.gain.Disable()
 		self.getGain.Disable()
 		self.port.Disable()
+		self.enable.Disable()
+		self.share.Disable()
 		self.okBtn.Disable()
 
 	def onGetGain(self,e):
@@ -908,6 +811,9 @@ class editSdrAis(wx.Dialog):
 		gain = self.gain.GetValue()
 		ppm = self.ppm.GetValue()
 		port = self.port.GetValue()
+		if self.share.GetValue(): share = '1'
+		else: share = '0'
+		self.conf.set('SDR-VHF', 'share', share)
 		try:
 			if gain: float(gain)
 			else: gain = 'auto'
@@ -919,12 +825,12 @@ class editSdrAis(wx.Dialog):
 			return
 		self.conf.set('SDR-VHF', 'sdraisdeviceindex', str(index))
 		self.conf.set('SDR-VHF', 'sdraisppm', str(ppm))
-		if gain == 'auto':
-			self.conf.set('SDR-VHF', 'sdraisgain', '')
-		else:
-			self.conf.set('SDR-VHF', 'sdraisgain', str(gain))
+		if gain == 'auto': self.conf.set('SDR-VHF', 'sdraisgain', '')
+		else: self.conf.set('SDR-VHF', 'sdraisgain', str(gain))
 		self.conf.set('SDR-VHF', 'sdraisport', str(port))
-		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', self.conf.home, str(gain)])
+		if self.enable.GetValue(): enable = '1'
+		else: enable = '0'
+		subprocess.call([self.platform.admin, 'python3', self.currentdir+'/service.py', 'editSdrAis', str(gain), str(ppm), str(index), str(port), enable, share])
 		self.EndModal(wx.ID_OK)
 
 ################################################################################
@@ -933,11 +839,11 @@ class editDvbt(wx.Dialog):
 	def __init__(self):
 		self.currentdir = os.path.dirname(os.path.abspath(__file__))
 
-		wx.Dialog.__init__(self, None, title=_('Scanning DVB-T channels'), size=(370,120))
+		wx.Dialog.__init__(self, None, title=_('Scanning DVB-T channels'), size=(370,150))
 		panel = wx.Panel(self)
 
 		codeLabel = wx.StaticText(panel, label =_('Country code'))
-		self.countryCode = wx.TextCtrl(panel)
+		self.countryCode = wx.TextCtrl(panel,size=(-1, 25))
 
 		countriesList = wx.Button(panel, label=_('Get list'))
 		self.Bind(wx.EVT_BUTTON, self.onCountriesList, countriesList)

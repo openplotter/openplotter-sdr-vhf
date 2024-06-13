@@ -1,3 +1,15 @@
+openplotter-sdr-vhf (4.1.0-stable) bookworm; urgency=medium
+
+  * stable
+
+ -- Sailoog <info@sailoog.com>  Thu, 13 Jun 2024 20:10:51 +0200
+
+openplotter-sdr-vhf (4.0.19-beta) bookworm; urgency=medium
+
+  * beta
+
+ -- Sailoog <info@sailoog.com>  Sat, 20 Jan 2024 14:40:55 +0100
+
 openplotter-sdr-vhf (3.0.9-stable) bullseye; urgency=medium
 
   * v3

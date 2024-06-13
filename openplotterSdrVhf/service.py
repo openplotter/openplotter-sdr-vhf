@@ -29,14 +29,13 @@ if sys.argv[1]=='stopProcesses':
 	subprocess.call(['pkill', '-15', 'welle-io'])
 	subprocess.call(['pkill', '-15', 'w_scan'])
 	subprocess.call(['pkill', '-15', 'vlc'])
-	subprocess.call(['systemctl', 'stop', 'openplotter-rtl_ais'])
+	subprocess.call(['systemctl', 'stop', 'ais-catcher'])
 
 if sys.argv[1]=='startProcesses':
 	try:
-		subprocess.check_output(['systemctl', 'is-enabled', 'openplotter-rtl_ais']).decode(sys.stdin.encoding)
-		subprocess.call(['systemctl', 'restart', 'openplotter-rtl_ais'])
-	except: pass
-
+		subprocess.check_output(['systemctl', 'is-enabled', 'ais-catcher']).decode(sys.stdin.encoding)
+		subprocess.call(['systemctl', 'restart', 'ais-catcher'])
+	except: subprocess.call(['systemctl', 'stop', 'ais-catcher'])
 	try:
 		subprocess.call(['systemctl', 'stop', 'signalk.service'])
 		subprocess.call(['systemctl', 'stop', 'signalk.socket'])
@@ -45,31 +44,24 @@ if sys.argv[1]=='startProcesses':
 	except: pass
 
 if sys.argv[1]=='editSdrAis':
-	home = sys.argv[2]
-	gain = sys.argv[3]
-	if gain == 'auto': 
-		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -P $sdraisport\n'
-	else: 
-		execStart = 'ExecStart=/usr/bin/rtl_ais -d $sdraisdeviceindex -p $sdraisppm -g $sdraisgain -P $sdraisport\n'
+	gain = sys.argv[2]
+	if not gain: gain = 'auto'
+	sdraisppm = sys.argv[3]
+	if not sdraisppm: sdraisppm = '0'
+	sdraisdeviceindex = sys.argv[4]
+	if not sdraisdeviceindex: sdraisdeviceindex = '0'
+	sdraisport = sys.argv[5]
+	if not sdraisport: sdraisport = '10110'
+	enable = sys.argv[6]
+	if not enable: enable = '0'
+	share = sys.argv[7]
+	if share == '1': share = ' -X'
+	else: share = ''
+
 	try:
-		fo = open('/etc/systemd/system/openplotter-rtl_ais.service', "w")
-		fo.write(
-		'[Unit]\n'+
-		'Description = Decode AIS received by rtl-sdr and send as NMEA 0183 to UDP port\n'+
-		'After=syslog.target network.target audit.service\n'+
-		'StartLimitInterval=200\n'+
-		'StartLimitBurst=5\n'+
-		'[Service]\n'+
-		'Type=simple\n'+
-		'User=root\n'+
-		'EnvironmentFile='+home+'/.openplotter/openplotter.conf\n'+
-		execStart+
-		'Restart=always\n'+
-		'RestartSec=30\n'+
-		'KillMode=process\n\n'+
-		'[Install]\n'+
-		'WantedBy=multi-user.target\n'
-		)
+		fo = open('/etc/default/ais-catcher', "w")
+		fo.write('OPTS=" -gr RTLAGC on TUNER '+gain+' -a 192K -p '+sdraisppm+' -d:'+sdraisdeviceindex+' -q -u 127.0.0.1 '+sdraisport+' -N 8100 CDN /usr/share/ais-catcher-webassets'+share+'"')
 		fo.close()
-		subprocess.call((' systemctl daemon-reload').split())
+		if enable == '1': subprocess.call(['systemctl', 'enable', 'ais-catcher'])
+		else: subprocess.call(['systemctl', 'disable', 'ais-catcher'])
 	except Exception as e: print(str(e))

@@ -29,16 +29,7 @@ def main():
 
 	print(_('Removing python packages...'))
 	try:
-		subprocess.call(['pip3', 'uninstall', '-y', 'pyrtlsdr'])
-		print(_('DONE'))
-	except Exception as e: print(_('FAILED: ')+str(e))
-	
-	print(_('Removing rtl_ais service...'))
-	try:
-		subprocess.call(('systemctl stop openplotter-rtl_ais').split())
-		subprocess.call(('systemctl disable openplotter-rtl_ais').split())
-		subprocess.call(('rm -f /etc/systemd/system/openplotter-rtl_ais.service').split())
-		subprocess.call(('systemctl daemon-reload').split())
+		subprocess.call(['pip3', 'uninstall', '-y', 'pyrtlsdr', '--break-system-packages'])
 		print(_('DONE'))
 	except Exception as e: print(_('FAILED: ')+str(e))
 
